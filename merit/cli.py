@@ -1,7 +1,11 @@
 """CLI shell: IO, sessions, and printing. No LLM logic beyond wiring builders."""
+
 import os
 import sys
+import time
 import uuid
+from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
 from pathlib import Path
 
 import typer
@@ -10,7 +14,7 @@ from langgraph.types import Command
 
 from merit import mail as mail_module
 from merit import queue, track
-from merit.fetch import fetch_posting
+from merit.fetch import fetch_job, fetch_posting, job_id, parse_job
 from merit.graph.build import build_graph
 from merit.mail import INBOX_DIR, MailError, connect, fetch_messages, ingest_alerts, ingest_messages
 from merit.models import build_extractor, build_judge, build_writer
@@ -357,3 +361,74 @@ def track_show(app_id: int):
     except track.TrackError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from None
+
+
+POSTINGS_DIR = "corpus/postings"
+ENRICH_PAUSE = 0.8
+
+
+def _posting_markdown(entry: queue.Entry, posting) -> str:
+    """Frontmatter shaped for `merit rank`: it reads `subject:` for the title
+    and parses `date:` as RFC 2822, so alert_date is emitted in that format
+    rather than ISO."""
+    sent = datetime.fromisoformat(entry.alert_date).replace(tzinfo=UTC)
+    criteria = "".join(f"{k.lower().replace(' ', '-')}: {v}\n" for k, v in posting.criteria.items())
+    return (
+        "---\n"
+        f"subject: {entry.title}\n"
+        f"company: {entry.company}\n"
+        f"url: {entry.url}\n"
+        f"date: {format_datetime(sent)}\n"
+        f"{criteria}"
+        "---\n\n"
+        f"{posting.description}\n"
+    )
+
+
+@app.command()
+def enrich(
+    days: int = typer.Option(15, "--days"),
+    queue_path: str = typer.Option(str(queue.QUEUE_PATH), "--queue-path"),
+    out: str = typer.Option(POSTINGS_DIR, "--out"),
+):
+    """Fetch the real description for recent queue entries so `merit rank` can
+    score them. Closed and deleted postings are dropped from the queue instead
+    of being written - evidence of death, never a guess from the date."""
+    out_dir = Path(out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cutoff = (datetime.now(UTC).date() - timedelta(days=days)).isoformat()
+    entries = [e for e in queue.load_entries(Path(queue_path)) if e.alert_date >= cutoff]
+
+    written = skipped = dropped = 0
+    for entry in entries:
+        job = job_id(entry.url)
+        if job is None:
+            continue
+        path = out_dir / f"{entry.alert_date}-{job}.md"
+        if path.exists():
+            skipped += 1
+            continue
+        try:
+            html = fetch_job(job)
+        except Exception as exc:  # one bad posting never aborts the batch
+            typer.echo(f"failed {entry.url}: {exc}", err=True)
+            time.sleep(ENRICH_PAUSE)
+            continue
+        posting = parse_job(html) if html is not None else None
+        if posting is None or posting.expired:
+            queue.discard(Path(queue_path), entry.url)
+            dropped += 1
+        elif not posting.description.strip():
+            typer.echo(f"no description parsed: {entry.url}", err=True)
+        else:
+            tmp_path = path.with_name(path.name + ".tmp")
+            tmp_path.write_text(_posting_markdown(entry, posting), encoding="utf-8")
+            tmp_path.chmod(0o600)
+            tmp_path.replace(path)
+            written += 1
+        time.sleep(ENRICH_PAUSE)
+
+    typer.echo(
+        f"enriched {written}, already had {skipped}, dropped {dropped} closed/deleted", err=True
+    )
+    typer.echo(f"  merit rank {out}", err=True)

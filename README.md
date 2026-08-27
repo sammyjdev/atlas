@@ -25,6 +25,21 @@ merit resume <id> --reject
 
 If `profile/profile.yaml` changed since the report, `merit resume` exits 2 and asks you to re-run `merit match`. The default profile path is `profile/profile.yaml`; `profile/profile.example.yaml` is the template.
 
+The queue that `merit ingest-mail` builds holds only what a LinkedIn job alert
+carries: title, company, url, date. To score those against the profile you need
+the real description, which `merit enrich` fetches from LinkedIn's guest job
+surface:
+
+```bash
+merit enrich --days 15        # writes corpus/postings/<date>-<job-id>.md
+merit rank corpus/postings    # deterministic score against profile skills
+```
+
+`enrich` is idempotent - an entry whose file already exists is never fetched
+again. A posting that no longer accepts applications, or that returns 404, is
+dropped from the queue instead of written: the queue only loses an entry on
+evidence of closure, never on its age.
+
 ## Configuration
 
 | Variable | Default | Purpose |
