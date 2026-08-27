@@ -1,5 +1,6 @@
 """CLI shell: IO, sessions, and printing. No LLM logic beyond wiring builders."""
 
+import http.client
 import os
 import sys
 import time
@@ -410,7 +411,11 @@ def enrich(
             continue
         try:
             html = fetch_job(job)
-        except Exception as exc:  # one bad posting never aborts the batch
+        # Everything fetch_job can raise, named rather than blind: HTTPError and
+        # socket timeouts are OSError, a truncated read is an HTTPException, and
+        # an over-large response is a ValueError. One bad posting never aborts
+        # the batch.
+        except (OSError, http.client.HTTPException, ValueError) as exc:
             typer.echo(f"failed {entry.url}: {exc}", err=True)
             time.sleep(ENRICH_PAUSE)
             continue
