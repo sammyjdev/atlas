@@ -1,5 +1,6 @@
 # tests/test_serve_vagas.py - unified Vagas view (IA redesign 2026-08-03)
 from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,7 @@ from fastapi.testclient import TestClient
 from merit import queue, track
 from merit.serve.app import create_app
 from merit.serve.views import vagas
+from merit.serve.views.vagas import STALE_DAYS
 
 FIXTURES = Path(__file__).parent / "fixtures"
 PROFILE_FIXTURE = FIXTURES / "profile_small.yaml"
@@ -78,8 +80,8 @@ def test_bar_is_proportional_and_bounded():
 def test_vagas_lists_both_sources_with_badges(client):
     body = client.get("/vagas").text
 
-    assert "Senior FastAPI Engineer - Acme" in body       # inmail
-    assert "Senior FastAPI Engineer, REST APIs" in body   # alert
+    assert "Senior FastAPI Engineer - Acme" in body  # inmail
+    assert "Senior FastAPI Engineer, REST APIs" in body  # alert
     assert "inmail" in body
     assert "alerta" in body
     assert "forte" in body
@@ -98,8 +100,8 @@ def test_vagas_source_filter(client):
 def test_vagas_hides_weak_by_default_with_counters(client):
     body = client.get("/vagas").text
 
-    assert "PyTorch Researcher" not in body          # inmail score <= 0
-    assert "Staff PyTorch Research" not in body      # alert score <= 0
+    assert "PyTorch Researcher" not in body  # inmail score <= 0
+    assert "Staff PyTorch Research" not in body  # alert score <= 0
     assert "2 sem aderencia" in body
 
     revealed = client.get("/vagas?hidden=1").text
@@ -110,8 +112,8 @@ def test_vagas_hides_weak_by_default_with_counters(client):
 def test_vagas_alert_row_links_out_inmail_expands(client):
     body = client.get("/vagas").text
 
-    assert ALERT_HOT.url in body                       # alert opens LinkedIn
-    assert "/vagas/posting/acme.md" in body            # inmail lazy detail
+    assert ALERT_HOT.url in body  # alert opens LinkedIn
+    assert "/vagas/posting/acme.md" in body  # inmail lazy detail
 
 
 def test_vagas_detail_shows_hits_and_sanitized_body(client):
@@ -140,7 +142,7 @@ def test_vagas_track_inmail_stays_in_list_and_shows_state(client, tmp_path):
     assert "Senior FastAPI Engineer - Acme" in listing
 
     revealed = client.get("/vagas?hidden=1").text
-    assert "queued" in revealed          # pipeline state visible on the row
+    assert "queued" in revealed  # pipeline state visible on the row
     assert "/dossie/1" in revealed
 
 
@@ -182,7 +184,7 @@ def test_old_routes_redirect_to_vagas(client):
 def test_topbar_has_four_views_with_badges(client):
     body = client.get("/vagas").text
 
-    assert "1 Vagas (2)" in body      # acme inmail + globex alert visible
+    assert "1 Vagas (2)" in body  # acme inmail + globex alert visible
     assert "2 Pipeline (0)" in body
     assert "3 Dossie" in body
     assert "4 Evals" in body
@@ -242,16 +244,21 @@ def test_vagas_track_inmail_captures_thread_id(tmp_path, monkeypatch):
 
 
 def test_vagas_groups_inmails_by_thread_keeping_freshest(tmp_path, monkeypatch):
+    # Dates are relative on purpose: pinned ones aged past STALE_DAYS and the
+    # older message stopped reaching the grouping step at all, so this asserted
+    # nothing from 2026-09 onwards while still looking like a real test.
     inbox = tmp_path / "inbox"
     inbox.mkdir()
     thread = "https://www.linkedin.com/messaging/thread/2-SAME==/"
+    older = format_datetime(datetime.now(UTC) - timedelta(days=STALE_DAYS - 8))
+    newer = format_datetime(datetime.now(UTC) - timedelta(days=2))
     (inbox / "old.md").write_text(
-        f"---\nsubject: Staff Engineer - Threadco\ndate: Mon, 20 Jul 2026 10:00:00 +0000\n---\n"
+        f"---\nsubject: Staff Engineer - Threadco\ndate: {older}\n---\n"
         f"# Staff Engineer\n\nFastAPI role. {thread}\n",
         encoding="utf-8",
     )
     (inbox / "new.md").write_text(
-        f"---\nsubject: Message replied: Staff Engineer\ndate: Sun, 02 Aug 2026 10:00:00 +0000\n---\n"
+        f"---\nsubject: Message replied: Staff Engineer\ndate: {newer}\n---\n"
         f"# Message replied: Staff Engineer\n\nGreat, FastAPI it is! {thread}\n",
         encoding="utf-8",
     )
@@ -261,5 +268,5 @@ def test_vagas_groups_inmails_by_thread_keeping_freshest(tmp_path, monkeypatch):
     body = TestClient(create_app()).get("/vagas").text
 
     assert body.count("data-row") == 1
-    assert "Message replied: Staff Engineer" in body   # freshest wins
-    assert "1 agrupadas" in body                       # grouping is visible, not silent
+    assert "Message replied: Staff Engineer" in body  # freshest wins
+    assert "1 agrupadas" in body  # grouping is visible, not silent
