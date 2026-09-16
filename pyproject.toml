@@ -2,7 +2,7 @@
 name = "atlas-workspace"
 version = "0.0.0"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["atlas-kit"]
 
 [tool.uv.workspace]
 members = ["packages/*"]
