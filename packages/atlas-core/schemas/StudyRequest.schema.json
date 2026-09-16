@@ -1,0 +1,35 @@
+{
+  "description": "Reserved: SAGE asks ORBIT for material on a gap. Not produced in v1.",
+  "properties": {
+    "schema_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "topic": {
+      "title": "Topic",
+      "type": "string"
+    },
+    "axis": {
+      "title": "Axis",
+      "type": "string"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "topic",
+    "axis",
+    "reason"
+  ],
+  "title": "StudyRequest",
+  "type": "object"
+}

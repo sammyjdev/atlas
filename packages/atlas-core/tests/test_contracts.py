@@ -1,5 +1,6 @@
 import json
 from datetime import date
+from pathlib import Path
 
 import pytest
 from atlas_core import contracts
@@ -54,3 +55,14 @@ def test_export_json_schemas_writes_one_file_per_item(tmp_path):
     ]
     schema = json.loads((tmp_path / "DemandSignal.schema.json").read_text())
     assert schema["properties"]["schema_version"]["const"] == "1"
+
+
+def test_committed_schemas_are_current(tmp_path):
+    committed = Path(__file__).parents[1] / "schemas"
+    for path in contracts.export_json_schemas(tmp_path):
+        committed_text = (committed / path.name).read_text()
+        generated_text = path.read_text()
+        assert committed_text == generated_text, (
+            f"{path.name} is stale: regenerate with "
+            "export_json_schemas(Path('packages/atlas-core/schemas'))"
+        )

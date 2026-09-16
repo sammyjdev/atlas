@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "Demand": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "core",
+            "nice-to-have"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "quote": {
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "quote"
+      ],
+      "title": "Demand",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "inmail",
+        "alert",
+        "manual"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "company": {
+      "title": "Company",
+      "type": "string"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Url"
+    },
+    "posted_at": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Posted At"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "demands": {
+      "items": {
+        "$ref": "#/$defs/Demand"
+      },
+      "title": "Demands",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "title",
+    "company",
+    "text"
+  ],
+  "title": "JobPosting",
+  "type": "object"
+}

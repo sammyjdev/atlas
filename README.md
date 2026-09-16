@@ -11,3 +11,9 @@ each other. They exchange data through an append-only local exchange.
 Decisions are recorded in `docs/adr/`.
 
 Personal data never enters this repository.
+
+## Contracts
+
+Exchange item schemas live in `packages/atlas-core/schemas/` as JSON Schema
+and are generated from `atlas_core.contracts`. The rationale is in
+`docs/adr/0001-umbrella-monorepo.md`.

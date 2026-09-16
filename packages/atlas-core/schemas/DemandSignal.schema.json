@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "SkillDemand": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "count": {
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "share": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Share",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "count",
+        "share"
+      ],
+      "title": "SkillDemand",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": "1",
+      "default": "1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "window_start": {
+      "format": "date",
+      "title": "Window Start",
+      "type": "string"
+    },
+    "window_end": {
+      "format": "date",
+      "title": "Window End",
+      "type": "string"
+    },
+    "postings": {
+      "minimum": 0,
+      "title": "Postings",
+      "type": "integer"
+    },
+    "skills": {
+      "items": {
+        "$ref": "#/$defs/SkillDemand"
+      },
+      "title": "Skills",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "window_start",
+    "window_end",
+    "postings",
+    "skills"
+  ],
+  "title": "DemandSignal",
+  "type": "object"
+}
