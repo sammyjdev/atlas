@@ -32,11 +32,12 @@ Constraints that shaped the decision:
    a core package. Distribution names: `atlas-kit` (core, import name
    `atlas_core`), `atlas-merit`, `atlas-orbit`, `atlas-sage` (import
    names `atlas_merit`, `atlas_orbit`, `atlas_sage`). The CLI facade is
-   `atlas`, shipped as a console script by `atlas-kit`; the unrelated PyPI `atlas` project may ship the same script name, so the install docs warn about the collision.
+   `atlas`, to be shipped as a console script once the first module lands; the unrelated PyPI `atlas` project may ship the same script name, so the install docs warn about the collision.
 2. Three layers: interfaces (`atlas` CLI, local FastAPI plus htmx UI,
    GitHub Actions workflows), modules, core. Modules import only
    `atlas_core`; `atlas_core` imports no module. import-linter enforces
-   both rules in CI.
+   the core rule in CI today (a forbidden contract on atlas_core); the
+   module independence contract is added when the first two modules land.
 3. Core owns: the profile (single source of truth for the honesty rule,
    skills with evidence and source, aliases, interest axes), the exchange
    contracts (`JobPosting`, `DemandSignal`, `ResearchItem`, reserved
@@ -46,14 +47,27 @@ Constraints that shaped the decision:
    (`~/.atlas/config.toml`; secrets only in environment variables, or the OS keyring where one exists - the dev machine is macOS, the runner is Linux).
 4. Each module owns its storage. MERIT keeps SQLite checkpoint, ORBIT
    uses SQLite with a vector extension (`sqlite-vec` is the candidate; support on the target platform is not verified yet), SAGE keeps markdown.
-5. Modules integrate through an append-only exchange: one immutable JSON
-   file per item under `exchange/<channel>/<id>.json`, id sortable by
-   publish time, one cursor per consumer, no module edits another
-   module's files. Ids are a zero-padded nanosecond timestamp plus a random suffix, so lexicographic order equals publish order on one host. A cursor is the last id a consumer processed and it reads only ids above it, so an item written below an advanced cursor is never seen; today one runner serializes every job, so that case cannot arise, and the first second producer or the git-backed store supersedes this rule. The exchange grows without bound: no retention or compaction policy exists yet. There is no `ExchangeStore` interface: only the local file store exists, and the abstraction waits until the git-backed hosted-mode store is a real second implementation. There is no central orchestrator; each module has its
-   own trigger and reads the exchange when it runs. Integrations are
-   opt-in via config.
+5. Modules integrate through an append-only exchange:
+   - 5a. One immutable JSON file per item under
+     `exchange/<channel>/<id>.json`, id sortable by publish time, one
+     cursor per consumer, no module edits another module's files.
+   - 5b. Ids are a zero-padded nanosecond timestamp plus a random
+     suffix, so lexicographic order equals publish order within one
+     process.
+   - 5c. A cursor is the last id a consumer processed and it reads only
+     ids above it, so an item written below an advanced cursor is never
+     seen; today one runner serializes every job, so that case cannot
+     arise, and the first second producer or the git-backed store
+     supersedes this rule.
+   - 5d. The exchange grows without bound: no retention or compaction
+     policy exists yet. There is no `ExchangeStore` interface: only the
+     local file store exists, and the abstraction waits until the
+     git-backed hosted-mode store is a real second implementation.
+   - 5e. There is no central orchestrator; each module has its own
+     trigger and reads the exchange when it runs. Integrations are
+     opt-in via config.
 6. v1 flow: MERIT publishes `DemandSignal`; ORBIT weights profile axes
-   with it; SAGE prioritizes topics with it (replacing `inputs/jds/`).
+   with it; SAGE prioritizes topics with it (prioritising over `inputs/jds/`).
    ORBIT publishes `ResearchItem`; SAGE turns it into study material.
    `StudyRequest` (SAGE to ORBIT) is reserved and not implemented.
 7. Three repositories: `atlas` (public, code only), `atlas-vault`
@@ -69,7 +83,7 @@ Constraints that shaped the decision:
 - MERIT and SAGE are imported with `git filter-repo`, which strips their personal-data paths and rewrites every commit hash. Dates, authorship and ordering survive; the original hashes do not, so the private repos are kept archived as the resolvable anchor for published claims such as C-MERIT-001 (MERIT's benchmark claim, whose evidence cites that history). SAGE is private today and its history carries real job postings, a vault and run state, so publishing a rewritten copy is irreversible: the import lands only after a file listing over every rewritten commit proves those paths are gone.
 - The two LLM gateways collapse into one in core. They were written independently, so the merged gateway carries the union of both provider configs and both cost-accounting paths; the migration is not a pure import rewrite.
 - SAGE's `inputs/jds/` stops being the topic source once `DemandSignal` exists and stays supported as a manual override.
-- Adding a module means adding a workspace package plus one line in the import-linter independence contract. Core changes only when the new module needs a new exchange contract, since contracts live in core.
+- Adding a module means adding a workspace package plus one line in the import-linter independence contract, which is created with the first two modules. Core changes only when the new module needs a new exchange contract, since contracts live in core.
 - Hosted-mode users get the same image and workflows with a different
   `runs-on` and a git-backed exchange store; that store is deferred until
   hosted mode is built.
