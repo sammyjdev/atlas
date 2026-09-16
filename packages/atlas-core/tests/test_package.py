@@ -1,5 +1,7 @@
+from importlib.metadata import version
+
 import atlas_core
 
 
-def test_package_exposes_version():
-    assert atlas_core.__version__ == "0.1.0"
+def test_package_version_matches_distribution():
+    assert atlas_core.__version__ == version("atlas-kit")

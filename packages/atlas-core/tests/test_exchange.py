@@ -57,3 +57,4 @@ def test_ids_stay_ordered_within_one_clock_tick(monkeypatch):
     monkeypatch.setattr(exchange.time, "time_ns", lambda: 1_000)
     ids = [new_id() for _ in range(5)]
     assert ids == sorted(ids) and len(set(ids)) == 5
+    assert len({i.split("-")[0] for i in ids}) == 5

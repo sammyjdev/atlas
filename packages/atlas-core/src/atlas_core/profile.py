@@ -42,7 +42,7 @@ class Profile(BaseModel):
         lowered = {alias.lower(): target for alias, target in self.aliases.items()}
         return lowered.get(name.lower(), name)
 
-    def evidence_ids(self) -> set[str]:
+    def skill_ids(self) -> set[str]:
         return {skill.id for skill in self.skills}
 
 

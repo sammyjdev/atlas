@@ -21,9 +21,9 @@ def test_resolve_uses_aliases_case_insensitively():
     assert loaded.resolve("rust") == "rust"
 
 
-def test_evidence_ids_lists_every_skill_id():
+def test_skill_ids_lists_every_skill_id():
     loaded = profile.load_profile(FIXTURE)
-    assert loaded.evidence_ids() == {"langgraph", "knowledge-graphs"}
+    assert loaded.skill_ids() == {"langgraph", "knowledge-graphs"}
 
 
 def test_evidence_requires_a_source():
