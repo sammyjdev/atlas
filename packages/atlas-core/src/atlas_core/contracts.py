@@ -13,8 +13,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1"
-_Version = Literal["1"]
+SchemaVersion = Literal["1"]
+SCHEMA_VERSION: SchemaVersion = "1"
+_Version = SchemaVersion
 _Unit = Field(ge=0.0, le=1.0)
 
 

@@ -8,7 +8,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, Field
 
-from atlas_core.contracts import SCHEMA_VERSION
+from atlas_core.contracts import SCHEMA_VERSION, SchemaVersion
 
 Status = Literal["strong", "partial", "gap"]
 
@@ -33,7 +33,7 @@ class Axis(BaseModel):
 
 
 class Profile(BaseModel):
-    schema_version: Literal["1"] = SCHEMA_VERSION
+    schema_version: SchemaVersion = SCHEMA_VERSION
     skills: list[SkillEntry]
     aliases: dict[str, str] = Field(default_factory=dict)
     axes: list[Axis] = Field(default_factory=list)
