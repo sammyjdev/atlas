@@ -36,6 +36,9 @@ requires-dist = [
 name = "atlas-workspace"
 version = "0.0.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "atlas-kit" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -45,6 +48,7 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "atlas-kit", editable = "packages/atlas-core" }]
 
 [package.metadata.requires-dev]
 dev = [
