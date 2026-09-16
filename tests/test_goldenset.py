@@ -1,5 +1,8 @@
 # tests/test_goldenset.py
 import json
+import sys
+
+import pytest
 
 from merit import goldenset
 
@@ -55,3 +58,10 @@ def test_agreement_evaluator_scores_fraction_of_matching_demands():
     reference = {"verdicts": {"Python": "strong", "RAG": "strong", "AWS": "strong"}}
     score = goldenset.agreement(outputs, reference)
     assert abs(score - 2 / 3) < 1e-9
+
+
+def test_load_langsmith_names_the_extra_when_the_package_is_missing(monkeypatch):
+    monkeypatch.setitem(sys.modules, "langsmith", None)
+    with pytest.raises(goldenset.LangSmithUnavailable) as exc:
+        goldenset._load_langsmith()
+    assert "merit[goldenset]" in str(exc.value)

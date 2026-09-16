@@ -21,6 +21,26 @@ _VIA_RE = re.compile(r"\s+-\s+via\s+.+$", re.MULTILINE)
 _FRONTMATTER_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
 
 
+class LangSmithUnavailable(RuntimeError):
+    """The optional LangSmith client is not installed."""
+
+
+def _load_langsmith():
+    try:
+        import langsmith
+    except ImportError as exc:
+        raise LangSmithUnavailable(
+            "merit.goldenset requires the langsmith package. "
+            "Install it with: pip install 'merit[goldenset]'"
+        ) from exc
+    if langsmith is None:
+        raise LangSmithUnavailable(
+            "merit.goldenset requires the langsmith package. "
+            "Install it with: pip install 'merit[goldenset]'"
+        )
+    return langsmith
+
+
 def sanitize(text: str) -> str:
     text = _FRONTMATTER_RE.sub("", text)
     text = _VIA_RE.sub("", text)
@@ -48,9 +68,7 @@ def agreement(outputs: dict, reference: dict) -> float:
 
 
 def _upload() -> None:
-    from langsmith import Client
-
-    client = Client()
+    client = _load_langsmith().Client()
     if client.has_dataset(dataset_name=DATASET):
         print(f"dataset {DATASET} already exists; leaving it untouched")
         return
@@ -87,7 +105,7 @@ def _target(inputs: dict) -> dict:
 
 
 def _run() -> None:
-    from langsmith import evaluate
+    evaluate = _load_langsmith().evaluate
 
     def verdict_agreement(outputs: dict, reference_outputs: dict) -> float:
         return agreement(outputs, reference_outputs)

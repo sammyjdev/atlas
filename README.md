@@ -51,9 +51,21 @@ evidence of closure, never on its age.
 
 `track add --dir` creates a per-application dossier under `<MERIT_DB parent>/applications` (mode `0700`). Dossiers hold personal data (job descriptions, recruiter threads, notes) and are never committed to the repo.
 
-## LangSmith tracing
+## LangSmith
 
-Tracing is opt-in and uses no LangSmith-specific code in the repo. Enable it purely with `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, and `LANGSMITH_ENDPOINT`. Postings and the profile are personal data, so set `LANGSMITH_HIDE_INPUTS=true` and `LANGSMITH_HIDE_OUTPUTS=true` for runs whose content must not be uploaded.
+Two separate things use LangSmith, and only one of them touches the code.
+
+**Tracing** is opt-in and uses no LangSmith-specific code. Enable it purely with `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, and `LANGSMITH_ENDPOINT`. Postings and the profile are personal data, so set `LANGSMITH_HIDE_INPUTS=true` and `LANGSMITH_HIDE_OUTPUTS=true` for runs whose content must not be uploaded.
+
+**The golden set** (`merit/goldenset.py`) does import the LangSmith client, to upload the sanitized dataset and score agreement runs against it. It ships as an extra:
+
+```
+pip install '.[goldenset]'
+python -m merit.goldenset upload   # create/refresh dataset "merit-golden"
+python -m merit.goldenset run      # experiment over the dataset
+```
+
+Without the extra both commands raise `LangSmithUnavailable` naming the install, the same way the optional chat backends do. `sanitize()` runs before anything leaves the machine and the tests pin that contract.
 
 ## Engines
 
