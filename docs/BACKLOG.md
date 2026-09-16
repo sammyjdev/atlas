@@ -40,9 +40,9 @@ smoke-tested end to end.
       is taken) - owner decides when to seal.
 - [ ] Enhancement: GNOMON judge panel over report/narrative quality
       (the v0.25 agreement experiment used a deterministic scorer).
-- [ ] Note: MERIT_API_KEY (DeepInfra) no longer present in any env/keychain;
-      store as merit-deepinfra-key to re-enable API-engine runs (required
-      for the v1.0 benchmark).
+- Done 2026-09-16: MERIT_API_KEY restored from the keychain item
+      merit-deepinfra-key (exported in ~/.zshrc); API-engine runs and the
+      provider-marked golden evaluation work again.
 - Done 2026-08-01/02: v0.3b engines+OTel (PR #22, live-validated:
   subscription full match, vertex probe on own GCP project, OTel spans);
   v0.25 LangSmith (merit-golden dataset sanitized-by-contract, experiment
@@ -85,10 +85,15 @@ smoke-tested end to end.
 
 ## Standing constraints
 
-- Scraping LinkedIn is permanently out of scope. Ingestion channels are the
-  owner's own inbox (InMail label for recruiter messages, "Linkedin Jobs"
-  label for alert digests) and pasted/URL postings. Fetching alert URLs is
-  scraping - the queue stores title/company/link only.
+- Crawling LinkedIn is permanently out of scope: no search, no listing
+  pages, no pagination, no login, no session cookies. Ingestion channels
+  are the owner's own inbox (InMail label for recruiter messages,
+  "Linkedin Jobs" label for alert digests) and pasted/URL postings.
+  `merit enrich` fetches ONE public, server-rendered guest job card per
+  posting that an alert already delivered to the owner (`merit/fetch.py`,
+  `GUEST_JOB_URL`), with a scheme allowlist and no retries on 4xx. That
+  is a single GET of a page the owner was sent, not scraping. The queue
+  still stores only title/company/link until `enrich` runs.
 - Personal data (real profile, corpus/, inbox files, ~/.merit) never enters
   git; only synthetic fixtures are committed.
 
