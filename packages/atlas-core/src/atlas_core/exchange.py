@@ -15,6 +15,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+_last_ns = 0
+
 
 _last_ns = 0
 
