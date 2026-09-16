@@ -1,0 +1,24 @@
+schema_version: "1"
+skills:
+  - id: langgraph
+    name: LangGraph
+    status: strong
+    evidence:
+      - text: "Six-node graph with SQLite checkpoint in MERIT"
+        source: "github.com/example/merit"
+    claims: ["interrupt-based approval gate"]
+  - id: knowledge-graphs
+    name: Knowledge graphs
+    status: partial
+    evidence: []
+    claims: []
+aliases:
+  lang graph: langgraph
+  KG: knowledge-graphs
+axes:
+  - id: agents
+    name: Agents and LangGraph
+    keywords: [agent, langgraph, tool use]
+  - id: kg
+    name: Knowledge graphs
+    keywords: [knowledge graph, ontology, graph rag]
