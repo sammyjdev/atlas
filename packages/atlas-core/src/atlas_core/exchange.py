@@ -16,10 +16,17 @@ from pathlib import Path
 from pydantic import BaseModel
 
 
+_last_ns = 0
+
+
 def new_id() -> str:
     # ponytail: stdlib sortable id (ns timestamp + uuid4); swap for python-ulid
-    # only if an external tool needs the ULID encoding.
-    return f"{time.time_ns():020d}-{uuid.uuid4().hex}"
+    # only if an external tool needs the ULID encoding. The clamp keeps ids
+    # strictly increasing inside one process even when the clock does not tick.
+    global _last_ns
+    now = max(time.time_ns(), _last_ns + 1)
+    _last_ns = now
+    return f"{now:020d}-{uuid.uuid4().hex}"
 
 
 class LocalExchangeStore:

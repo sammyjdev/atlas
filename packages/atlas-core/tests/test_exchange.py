@@ -1,6 +1,7 @@
 from datetime import date
 
 import pytest
+from atlas_core import exchange
 from atlas_core.contracts import DemandSignal, SkillDemand
 from atlas_core.exchange import Cursor, LocalExchangeStore, new_id
 
@@ -50,3 +51,9 @@ def test_cursor_round_trip(tmp_path):
     assert cursor.get() is None
     cursor.set("abc")
     assert Cursor(tmp_path / "cursors" / "sage.demand").get() == "abc"
+
+
+def test_ids_stay_ordered_within_one_clock_tick(monkeypatch):
+    monkeypatch.setattr(exchange.time, "time_ns", lambda: 1_000)
+    ids = [new_id() for _ in range(5)]
+    assert ids == sorted(ids) and len(set(ids)) == 5
