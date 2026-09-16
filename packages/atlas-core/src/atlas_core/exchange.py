@@ -18,9 +18,6 @@ from pydantic import BaseModel
 _last_ns = 0
 
 
-_last_ns = 0
-
-
 def new_id() -> str:
     # ponytail: stdlib sortable id (ns timestamp + uuid4); swap for python-ulid
     # only if an external tool needs the ULID encoding. The clamp keeps ids
