@@ -46,3 +46,30 @@ def test_residue_goes_to_judge():
 
 def test_prompt_carries_profile_and_residue():
     assert "{profile}" in MATCH_PROMPT and "{residue}" in MATCH_PROMPT
+
+
+def test_profile_payload_keeps_evidence_as_plain_strings():
+    from atlas_merit.nodes.match import profile_payload
+
+    payload = profile_payload(
+        {
+            "skills": [
+                {
+                    "id": "langgraph",
+                    "name": "LangGraph",
+                    "status": "strong",
+                    "evidence": [
+                        {
+                            "text": "Six-node graph with SQLite checkpoint",
+                            "source": "github.com/example/merit",
+                        }
+                    ],
+                    "claims": [],
+                }
+            ],
+            "aliases": {"lang graph": "langgraph"},
+        }
+    )
+    assert '"Six-node graph with SQLite checkpoint"' in payload
+    assert "source" not in payload
+    assert "github.com/example/merit" not in payload

@@ -7,7 +7,7 @@ from atlas_merit.nodes.ingest import ingest
 from atlas_merit.nodes.match import make_match_node
 from atlas_merit.nodes.narrative import make_narrative_node
 from atlas_merit.nodes.report import report
-from atlas_merit.schemas import Profile
+from atlas_merit.profile import Profile
 from atlas_merit.state import MeritState
 from atlas_merit.telemetry import traced_node
 

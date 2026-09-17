@@ -3,9 +3,8 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from atlas_merit import cli
-from atlas_merit.profile import load_profile
+from atlas_merit.profile import Profile, SkillEntry, load_profile
 from atlas_merit.rank import DEFAULT_TOP, extract_title, rank_dir, render, score_text
-from atlas_merit.schemas import Profile, SkillEntry
 
 FIXTURE = Path(__file__).parent / "fixtures" / "profile_rank.yaml"
 

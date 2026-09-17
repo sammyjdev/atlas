@@ -2,7 +2,9 @@ skills:
   - id: fastapi
     name: FastAPI
     status: strong
-    evidence: ["api: 40 routes"]
+    evidence:
+      - text: "api: 40 routes"
+        source: "github.com/example/merit"
   - id: pytorch
     name: PyTorch
     status: gap

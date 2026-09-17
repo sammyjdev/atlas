@@ -3,9 +3,9 @@ import hashlib
 from pathlib import Path
 
 import yaml
+from atlas_core.profile import Evidence, Profile, SkillEntry  # noqa: F401
+from atlas_core.profile import load_profile as load_core_profile
 from pydantic import ValidationError
-
-from atlas_merit.schemas import Profile, SkillEntry
 
 
 class ProfileError(Exception):
@@ -14,8 +14,7 @@ class ProfileError(Exception):
 
 def load_profile(path: str | Path) -> Profile:
     try:
-        data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-        return Profile.model_validate(data)
+        return load_core_profile(Path(path))
     except (yaml.YAMLError, ValidationError, OSError) as exc:
         raise ProfileError(f"invalid profile {path}: {exc}") from exc
 

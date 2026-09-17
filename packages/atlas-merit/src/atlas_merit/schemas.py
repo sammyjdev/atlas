@@ -6,19 +6,6 @@ from pydantic import BaseModel, Field
 Status = Literal["strong", "partial", "gap"]
 
 
-class SkillEntry(BaseModel):
-    id: str
-    name: str
-    status: Status
-    evidence: list[str] = Field(default_factory=list)
-    claims: list[str] = Field(default_factory=list)
-
-
-class Profile(BaseModel):
-    skills: list[SkillEntry]
-    aliases: dict[str, str] = Field(default_factory=dict)
-
-
 class Demand(BaseModel):
     name: str
     kind: Literal["core", "nice-to-have"]
