@@ -1,0 +1,107 @@
+# MERIT backlog and next steps
+
+Execution order for fresh sessions:
+`docs/superpowers/plans/2026-08-03-merit-execution-plan.md`. This file stays
+the inventory of what is open; that one decides what to do first.
+
+Status snapshot (2026-08-03): merit serve (FastAPI+htmx, localhost-only,
+CSP-clean) now carries four views - Vagas, Pipeline, Dossie, Evals - with
+keyboard nav and a LaunchAgent installer. The Fila view was replaced by the
+unified Vagas surface on 2026-08-03. Previous waves: v0.3a UI integrated from
+4 parallel executor lanes (PRs #18-#21) with zero merge conflicts. On master:
+six-node graph, CLI (match/resume/rank/queue/track/ingest-mail), security
+hardening, CI gate. Golden evaluation passed (agreement >= 80%, 29 postings /
+114 pinned verdicts). Live-validated against the owner's real mailbox:
+218 InMail postings ingested and ranked (top-15 all AI-engineer roles),
+1340 alert digests parsed into a 7024-row triage queue, application ledger
+smoke-tested end to end.
+
+## Next in the loop
+
+- Done 2026-08-03: **triage UI wave** (nine commits, direct to master, no PR).
+  Rank view landed as a live InMail scoring surface and was then folded into
+  a single **Vagas** view answering three questions per row: origin (inmail
+  vs alerta), source-calibrated level, and pipeline state inline. Stale rows
+  (30+ days) dropped entirely; on-site and score <= 0 hidden behind ?hidden=1.
+  Dark dev-tool redesign, in-list triage, topbar badges and a keys-help
+  overlay. On the ingestion side: mailbox-scoped UID cursors with a dual-label
+  sync agent, automatic contact capture from LinkedIn thread ids with a
+  follow-up radar, and InMail rows grouped by conversation thread.
+- Note 2026-08-03: that wave shipped nine ruff violations because the gate was
+  never run before committing; fixed in a follow-up. **Run the gate before
+  committing, including for hand-work outside the loop.**
+- Done 2026-08-03: **v1.0 SEALED** - merit-graph-vs-loop benchmark run per
+  frozen pre-registration (negative-flow reviewed, cross-vendor fairness
+  UNFAIR->FAIR cycle): quality PARITY (delta CI [0,0], agreement 95.4%
+  [90.4, 99.2]), token overhead 0.0%, latency tax indistinguishable from
+  zero (+45ms/6.1s, CI spans zero). Claim C-MERIT-001 published; Evals
+  view (4) renders docs/evals/summary.json.
+- [ ] PyPI publication as merit-fit (name verified free 2026-08-02; `merit`
+      is taken) - owner decides when to seal.
+- [ ] Enhancement: GNOMON judge panel over report/narrative quality
+      (the v0.25 agreement experiment used a deterministic scorer).
+- Done 2026-09-16: MERIT_API_KEY restored from the keychain item
+      merit-deepinfra-key (exported in ~/.zshrc); API-engine runs and the
+      provider-marked golden evaluation work again.
+- Done 2026-08-01/02: v0.3b engines+OTel (PR #22, live-validated:
+  subscription full match, vertex probe on own GCP project, OTel spans);
+  v0.25 LangSmith (merit-golden dataset sanitized-by-contract, experiment
+  merit-graph-1feec11d: 95.4% mean agreement, 24/29 perfect, 12m28s on the
+  subscription engine).
+- Previously: Issues #14 (hardening) and #15 (dossier) shipped and
+  live-validated 2026-07-30: incremental rescan 97s -> 3.3s on unchanged
+  mailbox; dossier smoke-tested on a real application (legacy row upgraded,
+  jd.md seeded from the ingested posting).
+
+## Awaiting the owner
+
+- [ ] Re-sign the Protocol B unsigned commits at your convenience (7e2151f,
+      3d7e54d and the agent/* commits merged via PRs #11-#13).
+- [ ] LinkedIn skills update: LangGraph and LangChain (commits exist).
+- [ ] New AI-first job alerts are live (old Java-heavy searches replaced
+      2026-07-30); let them accumulate - the queue's hot list mirrors alert
+      quality, so it improves as the new alerts land.
+
+## Polish batch (small issues, open on demand)
+
+- [ ] Narrative writer ignores the plain-hyphen rule: strip em/en dashes
+      deterministically in the narrative node.
+- [ ] Extract fragments compound demands ("cost/latency engineering" ->
+      "cost" + "latency"), producing noisy gap rows.
+- [ ] Golden evaluation prints the agreement rate only on failure; log it on
+      success too.
+- [ ] `merit queue` ordering: hot list is unordered; reuse rank scoring on
+      titles so the hottest entries surface first.
+
+## Roadmap
+
+- [ ] **v0.25 - evals:** postings corpus as a LangSmith dataset (owner-side
+      signup); LLM-as-judge scoring of report quality (GNOMON bridge).
+      Promotes LangSmith from partial to strong in the profile.
+- [ ] **v0.3 - service:** FastAPI layer mounting the same graph, Docker
+      deploy on the existing Coolify VPS.
+- [ ] **v1.0 - benchmark:** MERIT's graph vs a custom-loop implementation,
+      GNOMON panel, published through METRON + evidence-repo.
+
+## Standing constraints
+
+- Crawling LinkedIn is permanently out of scope: no search, no listing
+  pages, no pagination, no login, no session cookies. Ingestion channels
+  are the owner's own inbox (InMail label for recruiter messages,
+  "Linkedin Jobs" label for alert digests) and pasted/URL postings.
+  `merit enrich` fetches ONE public, server-rendered guest job card per
+  posting that an alert already delivered to the owner (`merit/fetch.py`,
+  `GUEST_JOB_URL`), with a scheme allowlist and no retries on 4xx. That
+  is a single GET of a page the owner was sent, not scraping. The queue
+  still stores only title/company/link until `enrich` runs.
+- Personal data (real profile, corpus/, inbox files, ~/.merit) never enters
+  git; only synthetic fixtures are committed.
+
+## Outside this repo (ecosystem)
+
+- [ ] Forge lanes stop when waiting on background children (observed 4x on
+      2026-07-29); needs a synchronous-polling rule in the lane machinery.
+- [ ] quench.mutator fabricated a KILLED verdict under sandbox EPERM
+      (claude-skills#17); plan stage leaked personal-data paths into plan
+      text (claude-skills#18).
+- [ ] `axon_record_outcome` not exposed to forge subagent MCP sessions.

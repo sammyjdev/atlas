@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if not_found %}
+<p>aplicacao nao encontrada</p>
+
+{% elif row is defined and row %}
+<header>
+  <h1>{{ row.title }}</h1>
+  <p class="muted">{{ row.company }}</p>
+</header>
+
+<section class="dossie-stepper" aria-label="status">
+  {% for s in statuses %}
+  <form method="post" action="/dossie/{{ row.id }}/status">
+    <input type="hidden" name="status" value="{{ s }}">
+    <button type="submit" data-status="{{ s }}"{% if s == row.status %} data-current="true"{% endif %}>{{ s }}</button>
+  </form>
+  {% endfor %}
+</section>
+
+<div class="dossie-panels">
+  <section class="dossie-panel">
+    <h2>JD</h2>
+    {% if jd_text %}
+    <pre>{{ jd_text }}</pre>
+    {% else %}
+    <p class="muted">sem dossie - registre a primeira entrada</p>
+    {% endif %}
+  </section>
+
+  <section class="dossie-panel">
+    <h2>thread</h2>
+    {% set log_file = "thread" %}
+    {% set log_entries = thread_entries %}
+    {% include "_dossie_log.html" %}
+  </section>
+
+  <section class="dossie-panel">
+    <h2>notas</h2>
+    {% set log_file = "notes" %}
+    {% set log_entries = notes_entries %}
+    {% include "_dossie_log.html" %}
+  </section>
+</div>
+
+{% else %}
+<h1>dossie</h1>
+{% if applications %}
+<div class="dossie-list">
+  {% for application in applications %}
+  <article class="dossie-row" data-row>
+    <div>
+      <a data-open href="/dossie/{{ application.id }}">{{ application.title }}</a>
+      <p class="muted">{{ application.company }}</p>
+    </div>
+    <span class="mono">{{ application.status }}</span>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">sem aplicacoes ainda</p>
+{% endif %}
+{% endif %}
+{% endblock %}

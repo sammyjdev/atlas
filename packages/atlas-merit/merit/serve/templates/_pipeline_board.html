@@ -1,0 +1,51 @@
+<div id="board">
+{% if not total_apps %}
+  <div class="pipeline-empty">
+    <p>pipeline vazio - promova vagas na Fila</p>
+  </div>
+{% else %}
+  <div class="pipeline-kanban">
+    {% for col in columns %}
+      {# `encerradas` collapses rejected+withdrawn, so its key is not a status
+         set_status would accept - it stays out of the drop contract. #}
+      <div class="pipeline-column"{% if col.key in all_statuses %} data-drop-status="{{ col.key }}"{% endif %}>
+        <div class="column-header">
+          <span class="column-label">{{ col.label }} ({{ col.count }})</span>
+        </div>
+        <div class="column-cards">
+          {% for card in col.apps %}
+            <div class="pipeline-card{% if card.cold %} card-cold{% endif %}" data-row
+                 draggable="true" data-app-id="{{ card.id }}">
+              <div class="card-header">
+                <a href="/dossie/{{ card.id }}" data-open class="card-title">{{ card.title }}</a>
+                {% if card.company %}
+                  <div class="card-company">{{ card.company }}</div>
+                {% endif %}
+              </div>
+              <div class="card-meta">
+                {% if card.idle_days is not none %}
+                <span class="card-date{% if card.cold %} idle-cold{% endif %}">sem contato ha {{ card.idle_days }}d</span>
+                {% else %}
+                <span class="card-date">{{ card.updated_at }}</span>
+                {% endif %}
+              </div>
+              <div class="card-actions">
+                <select name="status"
+                        aria-label="mover aplicacao"
+                        hx-post="/pipeline/{{ card.id }}/move"
+                        hx-target="#board"
+                        hx-swap="outerHTML"
+                        hx-trigger="change">
+                  {% for s in all_statuses %}
+                    <option value="{{ s }}" {% if card.status == s %}selected{% endif %}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+</div>
