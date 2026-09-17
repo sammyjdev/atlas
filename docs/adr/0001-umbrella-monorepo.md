@@ -1,6 +1,6 @@
 # ADR 0001: ATLAS umbrella monorepo for the career modules
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-09-16
 
 ## Context
