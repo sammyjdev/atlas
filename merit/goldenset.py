@@ -33,11 +33,6 @@ def _load_langsmith():
             "merit.goldenset requires the langsmith package. "
             "Install it with: pip install 'merit[goldenset]'"
         ) from exc
-    if langsmith is None:
-        raise LangSmithUnavailable(
-            "merit.goldenset requires the langsmith package. "
-            "Install it with: pip install 'merit[goldenset]'"
-        )
     return langsmith
 
 
