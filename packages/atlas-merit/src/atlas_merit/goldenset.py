@@ -13,6 +13,8 @@ import re
 import sys
 from pathlib import Path
 
+from atlas_core.config import atlas_home
+
 DATASET = "merit-golden"
 CORPUS = Path("corpus")
 GOLDEN = CORPUS / "golden.json"
@@ -88,7 +90,7 @@ def _target(inputs: dict) -> dict:
     from atlas_merit.models import build_extractor, build_judge, build_writer
     from atlas_merit.profile import load_profile
 
-    profile = load_profile("profile/profile.yaml")
+    profile = load_profile(atlas_home() / "profile.yaml")
     graph = build_graph(profile, build_extractor(), build_judge(), build_writer(), MemorySaver())
     config = {"configurable": {"thread_id": "goldenset"}}
     graph.invoke(

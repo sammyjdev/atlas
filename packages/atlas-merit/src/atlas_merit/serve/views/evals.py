@@ -10,12 +10,16 @@ from atlas_merit.serve import rendering
 
 router = APIRouter()
 
-DEFAULT_SUMMARY = "docs/evals/summary.json"
+DEFAULT_SUMMARY = Path(__file__).parents[2] / "data" / "evals" / "summary.json"
+
+
+def _summary_path() -> Path:
+    return Path(os.environ.get("MERIT_EVALS_SUMMARY", DEFAULT_SUMMARY))
 
 
 @router.get("/evals")
 async def evals(request: Request):
-    path = Path(os.environ.get("MERIT_EVALS_SUMMARY", DEFAULT_SUMMARY))
+    path = _summary_path()
     summary = None
     if path.is_file():
         try:

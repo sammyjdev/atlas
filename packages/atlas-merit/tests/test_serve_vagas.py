@@ -70,6 +70,16 @@ def test_level_bands_are_source_calibrated():
     assert vagas.level("alerta", 0) == "fraco"
 
 
+def test_db_path_uses_atlas_home_and_merit_db_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("ATLAS_HOME", str(tmp_path / "atlas-state"))
+    monkeypatch.delenv("MERIT_DB", raising=False)
+    assert Path(vagas._db_path()) == tmp_path / "atlas-state" / "merit" / "merit.db"
+
+    override = tmp_path / "custom.db"
+    monkeypatch.setenv("MERIT_DB", str(override))
+    assert Path(vagas._db_path()) == override
+
+
 def test_bar_is_proportional_and_bounded():
     assert vagas.bar("inmail", 20) == "█" * 5
     assert vagas.bar("inmail", 40) == "█" * 5  # capped

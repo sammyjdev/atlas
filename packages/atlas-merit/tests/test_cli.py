@@ -10,6 +10,39 @@ from tests.test_profile import FIXTURE
 runner = CliRunner()
 
 
+def test_db_path_uses_atlas_home_and_merit_db_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("ATLAS_HOME", str(tmp_path / "atlas-state"))
+    monkeypatch.delenv("MERIT_DB", raising=False)
+    assert Path(cli._db_path()) == tmp_path / "atlas-state" / "merit" / "merit.db"
+
+    override = tmp_path / "custom.db"
+    monkeypatch.setenv("MERIT_DB", str(override))
+    assert Path(cli._db_path()) == override
+
+
+def test_profile_path_uses_atlas_home_and_profile_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("ATLAS_HOME", str(tmp_path / "atlas-state"))
+    assert cli._profile_path(None) == tmp_path / "atlas-state" / "profile.yaml"
+
+    override = tmp_path / "custom.yaml"
+    assert cli._profile_path(str(override)) == override
+
+
+def test_match_resolves_the_default_profile_when_the_command_runs(tmp_path, monkeypatch):
+    _patch_models(monkeypatch)
+    profile = tmp_path / "atlas-state" / "profile.yaml"
+    profile.parent.mkdir()
+    profile.write_text(Path(FIXTURE).read_text())
+    monkeypatch.setenv("ATLAS_HOME", str(profile.parent))
+    monkeypatch.setenv("MERIT_DB", str(tmp_path / "merit.db"))
+    posting = tmp_path / "vaga.md"
+    posting.write_text("Senior role using FastAPI")
+
+    result = runner.invoke(cli.app, ["match", str(posting)])
+
+    assert result.exit_code == 0, result.output
+
+
 class FakeStructured:
     def __init__(self, result):
         self.result = result

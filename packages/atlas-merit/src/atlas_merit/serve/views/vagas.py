@@ -14,6 +14,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from urllib.parse import parse_qs
 
+from atlas_core.config import atlas_home, module_home
 from fastapi import APIRouter, HTTPException, Request
 
 from atlas_merit import goldenset, mail, profile, queue, rank, track
@@ -54,7 +55,7 @@ def _queue_path() -> Path:
 
 
 def _db_path() -> str:
-    path = Path(os.environ.get("MERIT_DB", Path.home() / ".merit" / "merit.db"))
+    path = Path(os.environ.get("MERIT_DB", module_home("merit") / "merit.db"))
     path.parent.mkdir(parents=True, exist_ok=True)
     return str(path)
 
@@ -64,7 +65,7 @@ def _dossier_root() -> Path:
 
 
 def _profile_path() -> str:
-    return os.environ.get("MERIT_PROFILE", "profile/profile.yaml")
+    return os.environ.get("MERIT_PROFILE", str(atlas_home() / "profile.yaml"))
 
 
 def _posting_path(name: str) -> Path:

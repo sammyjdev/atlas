@@ -10,6 +10,7 @@ from email.utils import format_datetime
 from pathlib import Path
 
 import typer
+from atlas_core.config import atlas_home, module_home
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
@@ -34,13 +35,14 @@ app = typer.Typer(add_completion=False)
 track_app = typer.Typer(add_completion=False)
 app.add_typer(track_app, name="track")
 
-DEFAULT_PROFILE = "profile/profile.yaml"
-
-
 def _db_path() -> str:
-    path = Path(os.environ.get("MERIT_DB", Path.home() / ".merit" / "merit.db"))
+    path = Path(os.environ.get("MERIT_DB", module_home("merit") / "merit.db"))
     path.parent.mkdir(parents=True, exist_ok=True)
     return str(path)
+
+
+def _profile_path(profile: str | None) -> Path:
+    return Path(profile) if profile else atlas_home() / "profile.yaml"
 
 
 def _dossier_root() -> Path:
@@ -63,16 +65,17 @@ def _graph(profile_path: str, saver: SqliteSaver):
 @app.command()
 def match(
     posting: str,
-    profile: str = typer.Option(DEFAULT_PROFILE, "--profile"),
+    profile: str | None = typer.Option(None, "--profile"),
     session_id: str | None = typer.Option(None, "--session-id"),
 ):
     text, meta = _read_posting(posting)
     sid = session_id or str(uuid.uuid4())
     config = {"configurable": {"thread_id": sid}}
     with SqliteSaver.from_conn_string(_db_path()) as saver:
-        graph = _graph(profile, saver)
+        profile_path = _profile_path(profile)
+        graph = _graph(profile_path, saver)
         graph.invoke(
-            {"posting_text": text, "posting_meta": meta, "profile_hash": profile_hash(profile)},
+            {"posting_text": text, "posting_meta": meta, "profile_hash": profile_hash(profile_path)},
             config,
         )
         report_md = graph.get_state(config).values["report_md"]
@@ -86,16 +89,17 @@ def resume(
     session_id: str,
     approve: bool = typer.Option(False, "--approve"),
     reject: bool = typer.Option(False, "--reject"),
-    profile: str = typer.Option(DEFAULT_PROFILE, "--profile"),
+    profile: str | None = typer.Option(None, "--profile"),
 ):
     if approve == reject:
         typer.echo("pass exactly one of --approve / --reject")
         raise typer.Exit(1)
     config = {"configurable": {"thread_id": session_id}}
     with SqliteSaver.from_conn_string(_db_path()) as saver:
-        graph = _graph(profile, saver)
+        profile_path = _profile_path(profile)
+        graph = _graph(profile_path, saver)
         stored = graph.get_state(config).values.get("profile_hash")
-        if stored and stored != profile_hash(profile):
+        if stored and stored != profile_hash(profile_path):
             typer.echo("profile changed since report; re-run merit match")
             raise typer.Exit(2)
         result = graph.invoke(Command(resume=approve), config)
@@ -108,14 +112,14 @@ def resume(
 @app.command()
 def rank(
     directory: str,
-    profile: str = typer.Option(DEFAULT_PROFILE, "--profile"),
+    profile: str | None = typer.Option(None, "--profile"),
     top: int = typer.Option(DEFAULT_TOP, "--top"),
 ):
     posting_dir = Path(directory)
     if not posting_dir.is_dir():
         typer.echo(f"not a directory: {directory}", err=True)
         raise typer.Exit(1)
-    prof = load_profile(profile)
+    prof = load_profile(_profile_path(profile))
     rows, skipped = rank_dir(prof, posting_dir)
     typer.echo(render_rank(rows, skipped, top))
 
@@ -220,7 +224,7 @@ def ingest_mail(
 def queue_cmd(
     queue_path: str = typer.Option(str(queue.QUEUE_PATH), "--queue-path"),
     all_: bool = typer.Option(False, "--all"),
-    profile: str = typer.Option(DEFAULT_PROFILE, "--profile"),
+    profile: str | None = typer.Option(None, "--profile"),
     prune_days: int = typer.Option(0, "--prune-days", help="Drop entries older than N days"),
 ):
     if prune_days:
@@ -231,7 +235,7 @@ def queue_cmd(
     if not entries:
         typer.echo("No queued postings yet. Run `merit ingest-mail` to check for job alerts.")
         return
-    terms = strong_terms(load_profile(profile))
+    terms = strong_terms(load_profile(_profile_path(profile)))
     hot = [e for e in entries if queue.is_hot(e.title, terms)]
     cold = [e for e in entries if not queue.is_hot(e.title, terms)]
 

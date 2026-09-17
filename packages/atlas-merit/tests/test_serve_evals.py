@@ -1,9 +1,11 @@
 # tests/test_serve_evals.py
 import json
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 from atlas_merit.serve.app import create_app
+from atlas_merit.serve.views import evals
 
 SUMMARY = {
     "model": "test-model", "seed": 7, "excluded_rows": 0,
@@ -19,6 +21,24 @@ SUMMARY = {
     "quality_verdict": "parity", "token_overhead": 0.0,
     "token_ceiling_breached": False,
 }
+
+
+def test_summary_path_uses_package_default_and_environment_override(tmp_path, monkeypatch):
+    monkeypatch.delenv("MERIT_EVALS_SUMMARY", raising=False)
+    packaged = (
+        Path(__file__).parent.parent
+        / "src"
+        / "atlas_merit"
+        / "data"
+        / "evals"
+        / "summary.json"
+    )
+    assert evals._summary_path() == packaged
+    assert packaged.is_file(), "the default must resolve to a file that ships in the wheel"
+
+    override = tmp_path / "custom-summary.json"
+    monkeypatch.setenv("MERIT_EVALS_SUMMARY", str(override))
+    assert evals._summary_path() == override
 
 
 def test_evals_renders_summary(tmp_path, monkeypatch):
