@@ -3,8 +3,8 @@ from typing import ClassVar
 
 import pytest
 
-from merit import models
-from merit.schemas import Demands
+from atlas_merit import models
+from atlas_merit.schemas import Demands
 
 
 class FakeTextBlock:

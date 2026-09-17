@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from merit import queue, track
-from merit.serve.app import create_app
-from merit.serve.views import vagas
-from merit.serve.views.vagas import STALE_DAYS
+from atlas_merit import queue, track
+from atlas_merit.serve.app import create_app
+from atlas_merit.serve.views import vagas
+from atlas_merit.serve.views.vagas import STALE_DAYS
 
 FIXTURES = Path(__file__).parent / "fixtures"
 PROFILE_FIXTURE = FIXTURES / "profile_small.yaml"

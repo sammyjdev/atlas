@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from merit import goldenset
+from atlas_merit import goldenset
 
 RAW_CORPUS_POSTING = (
     "# Achilles - via Juana Martina Molina\n\n"
@@ -64,4 +64,4 @@ def test_load_langsmith_names_the_extra_when_the_package_is_missing(monkeypatch)
     monkeypatch.setitem(sys.modules, "langsmith", None)
     with pytest.raises(goldenset.LangSmithUnavailable) as exc:
         goldenset._load_langsmith()
-    assert "merit[goldenset]" in str(exc.value)
+    assert "atlas-merit[goldenset]" in str(exc.value)

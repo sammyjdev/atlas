@@ -3,8 +3,8 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from merit import cli
-from merit.schemas import Demand, Demands, ResidueVerdicts
+from atlas_merit import cli
+from atlas_merit.schemas import Demand, Demands, ResidueVerdicts
 from tests.test_profile import FIXTURE
 
 runner = CliRunner()

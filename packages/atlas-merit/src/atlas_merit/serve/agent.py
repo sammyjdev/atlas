@@ -82,12 +82,12 @@ def render_sync_plist(
     With mailboxes, one chained ingest-mail run per label (UID cursors are
     per-mailbox)."""
     assert Path(python).is_absolute(), f"Python path must be absolute: {python}"  # noqa: S101
-    ingest = f'{shlex.quote(python)} -c "from merit.cli import app; app()" ingest-mail'
+    ingest = f'{shlex.quote(python)} -c "from atlas_merit.cli import app; app()" ingest-mail'
     if mailboxes:
         command = " && ".join(f"{ingest} --mailbox {shlex.quote(m)}" for m in mailboxes)
         args = ["/bin/sh", "-c", command]
     else:
-        args = [python, "-c", "from merit.cli import app; app()", "ingest-mail"]
+        args = [python, "-c", "from atlas_merit.cli import app; app()", "ingest-mail"]
     return {
         "Label": SYNC_LABEL,
         "ProgramArguments": args,

@@ -15,8 +15,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from merit import queue
-from merit.fetch import html_to_text
+from atlas_merit import queue
+from atlas_merit.fetch import html_to_text
 
 DEFAULT_HOST = "imap.gmail.com"
 DEFAULT_MAILBOX = "merit"

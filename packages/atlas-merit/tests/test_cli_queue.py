@@ -3,7 +3,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from merit import cli, queue
+from atlas_merit import cli, queue
 
 runner = CliRunner()
 

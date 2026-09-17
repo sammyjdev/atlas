@@ -6,7 +6,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from merit import cli, mail
+from atlas_merit import cli, mail
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mail"
 RECRUITER_RAW = (FIXTURES / "recruiter.eml").read_bytes()

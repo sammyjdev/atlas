@@ -1,5 +1,5 @@
 """Extract demanded skills from posting text via an injected structured runnable."""
-from merit.state import MeritState
+from atlas_merit.state import MeritState
 
 EXTRACT_PROMPT = """You extract the skills a job posting demands.
 

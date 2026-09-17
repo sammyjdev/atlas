@@ -3,7 +3,7 @@ import json
 
 from fastapi.testclient import TestClient
 
-from merit.serve.app import create_app
+from atlas_merit.serve.app import create_app
 
 SUMMARY = {
     "model": "test-model", "seed": 7, "excluded_rows": 0,

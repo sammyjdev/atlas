@@ -16,8 +16,8 @@ from urllib.parse import parse_qs
 
 from fastapi import APIRouter, HTTPException, Request
 
-from merit import goldenset, mail, profile, queue, rank, track
-from merit.serve import rendering
+from atlas_merit import goldenset, mail, profile, queue, rank, track
+from atlas_merit.serve import rendering
 
 router = APIRouter()
 

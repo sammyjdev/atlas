@@ -66,7 +66,7 @@ def setup_tracing(app) -> None:
 
 
 def traced_node(name: str):
-    """Decorator: wrap a graph node callable in a span named merit.node.<name>.
+    """Decorator: wrap a graph node callable in a span named atlas_merit.node.<name>.
 
     Returns the callable UNCHANGED (identity) when otel is disabled/missing -
     zero overhead, zero behavior change.
@@ -82,7 +82,7 @@ def traced_node(name: str):
 
         @wraps(fn)
         def wrapped(*args, **kwargs):
-            with tracer.start_as_current_span(f"merit.node.{name}"):
+            with tracer.start_as_current_span(f"atlas_merit.node.{name}"):
                 return fn(*args, **kwargs)
 
         return wrapped

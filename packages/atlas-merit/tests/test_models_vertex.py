@@ -2,7 +2,7 @@ from typing import ClassVar
 
 import pytest
 
-from merit import models
+from atlas_merit import models
 
 
 class FakeChatVertexAI:

@@ -5,7 +5,7 @@ import openai
 import pytest
 from langchain_core.runnables import Runnable
 
-from merit import models
+from atlas_merit import models
 
 
 def _rate_limit_error() -> openai.RateLimitError:

@@ -2,9 +2,9 @@ import pytest
 import typer.main
 from typer.testing import CliRunner
 
-from merit.cli import app
-from merit.serve import agent
-from merit.serve.agent import (
+from atlas_merit.cli import app
+from atlas_merit.serve import agent
+from atlas_merit.serve.agent import (
     LABEL,
     install_agent,
     log_path,

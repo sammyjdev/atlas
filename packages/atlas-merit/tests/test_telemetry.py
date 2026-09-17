@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 from typing import ClassVar
 
-from merit import telemetry
+from atlas_merit import telemetry
 
 
 class FakeSpanCM:
@@ -121,7 +121,7 @@ def test_traced_node_wraps_and_records_span(monkeypatch):
 
     wrapped = telemetry.traced_node("x")(fn)
     assert wrapped(1) == 2
-    assert tracer.spans == ["merit.node.x"]
+    assert tracer.spans == ["atlas_merit.node.x"]
 
 
 def test_build_exporter_defaults_to_console():

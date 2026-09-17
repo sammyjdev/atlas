@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from merit.schemas import Demand, Demands, Profile, ResidueVerdicts, SkillEntry, Verdict
+from atlas_merit.schemas import Demand, Demands, Profile, ResidueVerdicts, SkillEntry, Verdict
 
 
 def test_skill_entry_defaults():

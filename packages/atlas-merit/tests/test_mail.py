@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from merit import mail
+from atlas_merit import mail
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mail"
 RECRUITER_RAW = (FIXTURES / "recruiter.eml").read_bytes()
@@ -505,7 +505,7 @@ def test_ingest_alerts_second_run_adds_nothing(tmp_path):
 
 
 def test_env_config_falls_back_to_keychain(monkeypatch):
-    from merit import mail
+    from atlas_merit import mail
 
     monkeypatch.delenv("MERIT_IMAP_USER", raising=False)
     monkeypatch.delenv("MERIT_IMAP_PASSWORD", raising=False)
@@ -521,7 +521,7 @@ def test_env_config_falls_back_to_keychain(monkeypatch):
 
 
 def test_env_config_env_wins_over_keychain(monkeypatch):
-    from merit import mail
+    from atlas_merit import mail
 
     monkeypatch.setenv("MERIT_IMAP_USER", "env-user")
     monkeypatch.setenv("MERIT_IMAP_PASSWORD", "env-pass")
@@ -534,7 +534,7 @@ def test_env_config_env_wins_over_keychain(monkeypatch):
 
 
 def test_env_config_still_fails_loud_without_any_source(monkeypatch):
-    from merit import mail
+    from atlas_merit import mail
 
     monkeypatch.delenv("MERIT_IMAP_USER", raising=False)
     monkeypatch.delenv("MERIT_IMAP_PASSWORD", raising=False)
@@ -545,14 +545,14 @@ def test_env_config_still_fails_loud_without_any_source(monkeypatch):
 
 
 def test_cursor_name_is_mailbox_scoped():
-    from merit.mail import cursor_name
+    from atlas_merit.mail import cursor_name
 
     assert cursor_name("InMail") == ".last-uid-inmail"
     assert cursor_name("Linkedin Jobs") == ".last-uid-linkedin-jobs"
 
 
 def test_thread_id_extracted_from_body():
-    from merit.mail import thread_id
+    from atlas_merit.mail import thread_id
 
     body = "Reply here:\nhttps://www.linkedin.com/messaging/thread/2-AbC123==/\nBest,"
     assert thread_id(body) == "2-AbC123=="

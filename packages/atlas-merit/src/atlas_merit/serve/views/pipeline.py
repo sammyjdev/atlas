@@ -5,9 +5,9 @@ from urllib.parse import parse_qsl
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from merit import track
-from merit.cli import _db_path
-from merit.serve import rendering
+from atlas_merit import track
+from atlas_merit.cli import _db_path
+from atlas_merit.serve import rendering
 
 router = APIRouter()
 

@@ -2,7 +2,7 @@
 """U1 + U2: IMAP status checks, named errors, socket-close-on-failure."""
 import pytest
 
-from merit import mail
+from atlas_merit import mail
 
 
 class _FakeConn:

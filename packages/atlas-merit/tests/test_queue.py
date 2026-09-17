@@ -2,8 +2,8 @@
 import json
 from pathlib import Path
 
-from merit import queue
-from merit.profile import load_profile, strong_terms
+from atlas_merit import queue
+from atlas_merit.profile import load_profile, strong_terms
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mail"
 JOB_ALERT_RAW = (FIXTURES / "job_alert.eml").read_bytes()
@@ -124,7 +124,7 @@ def test_queue_module_imports_no_llm_layer():
         elif isinstance(node, ast.ImportFrom) and node.module:
             imported.add(node.module)
 
-    assert not any(name.startswith("merit") for name in imported)
+    assert not any(name.startswith("atlas_merit") for name in imported)
 
 
 # --- load_entries() / append_entries() --------------------------------------

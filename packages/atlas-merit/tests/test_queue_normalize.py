@@ -3,7 +3,7 @@
 plus one-time migration of already-normalized-or-not existing queue rows."""
 import json
 
-from merit import queue
+from atlas_merit import queue
 
 ALERT_DATE = "2026-07-29"
 

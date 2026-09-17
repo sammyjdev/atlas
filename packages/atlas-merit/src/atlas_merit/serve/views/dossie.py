@@ -5,10 +5,10 @@ from urllib.parse import parse_qsl
 
 from fastapi import APIRouter, Request
 
-from merit import track
-from merit.cli import _db_path, _dossier_root
-from merit.serve import rendering
-from merit.serve.rendering import templates
+from atlas_merit import track
+from atlas_merit.cli import _db_path, _dossier_root
+from atlas_merit.serve import rendering
+from atlas_merit.serve.rendering import templates
 
 router = APIRouter()
 

@@ -1,4 +1,4 @@
-from merit.state import MeritState
+from atlas_merit.state import MeritState
 
 
 def test_state_keys():

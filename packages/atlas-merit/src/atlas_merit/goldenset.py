@@ -5,8 +5,8 @@ frontmatter). Nothing leaves the machine unsanitized - sanitize() runs before
 any upload, and the tests pin that contract.
 
 Usage (owner-side, env: LANGSMITH_API_KEY):
-    python -m merit.goldenset upload   # create/refresh dataset "merit-golden"
-    python -m merit.goldenset run      # LangSmith experiment over the dataset
+    python -m atlas_merit.goldenset upload   # create/refresh dataset "merit-golden"
+    python -m atlas_merit.goldenset run      # LangSmith experiment over the dataset
 """
 import json
 import re
@@ -31,7 +31,7 @@ def _load_langsmith():
     except ImportError as exc:
         raise LangSmithUnavailable(
             "merit.goldenset requires the langsmith package. "
-            "Install it with: pip install 'merit[goldenset]'"
+            "Install it with: pip install 'atlas-merit[goldenset]'"
         ) from exc
     return langsmith
 
@@ -84,9 +84,9 @@ def _upload() -> None:
 def _target(inputs: dict) -> dict:
     from langgraph.checkpoint.memory import MemorySaver
 
-    from merit.graph.build import build_graph
-    from merit.models import build_extractor, build_judge, build_writer
-    from merit.profile import load_profile
+    from atlas_merit.graph.build import build_graph
+    from atlas_merit.models import build_extractor, build_judge, build_writer
+    from atlas_merit.profile import load_profile
 
     profile = load_profile("profile/profile.yaml")
     graph = build_graph(profile, build_extractor(), build_judge(), build_writer(), MemorySaver())
@@ -122,4 +122,4 @@ if __name__ == "__main__":
     elif cmd == "run":
         _run()
     else:
-        sys.exit("usage: python -m merit.goldenset upload|run")
+        sys.exit("usage: python -m atlas_merit.goldenset upload|run")

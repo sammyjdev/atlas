@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from merit import profile as profile_mod
-from merit.profile import ProfileError, load_profile, profile_hash, resolve
+from atlas_merit import profile as profile_mod
+from atlas_merit.profile import ProfileError, load_profile, profile_hash, resolve
 
 FIXTURE = Path(__file__).parent / "fixtures" / "profile_small.yaml"
 

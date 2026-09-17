@@ -1,5 +1,5 @@
 # tests/test_ingest.py
-from merit.nodes.ingest import MAX_CHARS, ingest
+from atlas_merit.nodes.ingest import MAX_CHARS, ingest
 
 
 def test_collapses_whitespace_and_blank_lines():

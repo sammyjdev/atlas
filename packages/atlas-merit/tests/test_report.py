@@ -1,5 +1,5 @@
 # tests/test_report.py
-from merit.nodes.report import report
+from atlas_merit.nodes.report import report
 
 VERDICTS = [
     {"demand": "FastAPI", "verdict": "strong", "evidence": ["api: 40 routes"],

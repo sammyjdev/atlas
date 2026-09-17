@@ -11,7 +11,7 @@ from langchain_core.runnables import Runnable, RunnableLambda
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
-from merit.schemas import Demands, ResidueVerdicts
+from atlas_merit.schemas import Demands, ResidueVerdicts
 
 DEEPINFRA_BASE = "https://api.deepinfra.com/v1/openai"
 DEFAULT_CLAUDE_SUBSCRIPTION_MODEL = "claude-sonnet-4-5"

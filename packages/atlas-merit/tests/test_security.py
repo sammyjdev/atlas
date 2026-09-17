@@ -4,11 +4,11 @@ import urllib.request
 
 import pytest
 
-from merit.fetch import MAX_BYTES, fetch_posting
-from merit.nodes.extract import EXTRACT_PROMPT
-from merit.nodes.match import MATCH_PROMPT, make_match_node
-from merit.profile import load_profile
-from merit.schemas import ResidueVerdicts, Verdict
+from atlas_merit.fetch import MAX_BYTES, fetch_posting
+from atlas_merit.nodes.extract import EXTRACT_PROMPT
+from atlas_merit.nodes.match import MATCH_PROMPT, make_match_node
+from atlas_merit.profile import load_profile
+from atlas_merit.schemas import ResidueVerdicts, Verdict
 from tests.test_profile import FIXTURE
 
 

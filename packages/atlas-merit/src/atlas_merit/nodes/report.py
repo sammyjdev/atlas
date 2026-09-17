@@ -1,6 +1,6 @@
 # merit/nodes/report.py
 """Render the fit report. Deterministic template, no LLM."""
-from merit.state import MeritState
+from atlas_merit.state import MeritState
 
 
 def report(state: MeritState) -> dict:

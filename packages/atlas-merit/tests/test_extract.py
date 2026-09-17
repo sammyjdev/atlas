@@ -1,5 +1,5 @@
-from merit.nodes.extract import EXTRACT_PROMPT, make_extract_node
-from merit.schemas import Demand, Demands
+from atlas_merit.nodes.extract import EXTRACT_PROMPT, make_extract_node
+from atlas_merit.schemas import Demand, Demands
 
 
 class FakeExtractor:

@@ -1,6 +1,6 @@
 # merit/queue.py
 """Job-alert queue: HTML digest parsing, hot/cold prefilter, flat JSON store.
-Stdlib only - no merit.* imports, no LLM/network calls."""
+Stdlib only - no atlas_merit.* imports, no LLM/network calls."""
 import json
 import re
 from collections.abc import Iterable

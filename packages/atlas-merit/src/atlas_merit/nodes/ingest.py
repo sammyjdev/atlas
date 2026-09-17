@@ -1,7 +1,7 @@
 """Normalize already-fetched posting text. Deterministic, no LLM."""
 import re
 
-from merit.state import MeritState
+from atlas_merit.state import MeritState
 
 MAX_CHARS = 20000
 

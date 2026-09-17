@@ -1,8 +1,8 @@
 # tests/test_serve_dossie.py
 from fastapi.testclient import TestClient
 
-from merit import track
-from merit.serve.app import create_app
+from atlas_merit import track
+from atlas_merit.serve.app import create_app
 
 
 def _db(tmp_path, monkeypatch):

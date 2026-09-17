@@ -2,10 +2,10 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from merit import cli
-from merit.profile import load_profile
-from merit.rank import DEFAULT_TOP, extract_title, rank_dir, render, score_text
-from merit.schemas import Profile, SkillEntry
+from atlas_merit import cli
+from atlas_merit.profile import load_profile
+from atlas_merit.rank import DEFAULT_TOP, extract_title, rank_dir, render, score_text
+from atlas_merit.schemas import Profile, SkillEntry
 
 FIXTURE = Path(__file__).parent / "fixtures" / "profile_rank.yaml"
 
@@ -228,7 +228,7 @@ def test_cli_rank_needs_no_llm_or_state_db(tmp_path, monkeypatch):
 
 
 def test_hit_names_groups_matched_skill_names_by_status():
-    from merit.rank import hit_names
+    from atlas_merit.rank import hit_names
 
     text = "We use FastAPI and REST APIs daily; PyTorch required."
     names = hit_names(_profile(), text)
@@ -239,7 +239,7 @@ def test_hit_names_groups_matched_skill_names_by_status():
 
 
 def test_hit_names_empty_when_nothing_matches():
-    from merit.rank import hit_names
+    from atlas_merit.rank import hit_names
 
     names = hit_names(_profile(), "Sales role, no tech stack.")
 
@@ -247,7 +247,7 @@ def test_hit_names_empty_when_nothing_matches():
 
 
 def test_classify_workplace_detects_explicit_signals():
-    from merit.rank import classify_workplace
+    from atlas_merit.rank import classify_workplace
 
     assert classify_workplace("100% remote role") == "remote"
     assert classify_workplace("Atuacao presencial em SP") == "onsite"

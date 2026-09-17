@@ -2,7 +2,7 @@
 """Generate application material grounded exclusively in covered evidence."""
 import json
 
-from merit.state import MeritState
+from atlas_merit.state import MeritState
 
 NARRATIVE_PROMPT = """Write tailored CV bullets and a short intro note for this application.
 

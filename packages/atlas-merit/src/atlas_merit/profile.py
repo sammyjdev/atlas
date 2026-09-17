@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from merit.schemas import Profile, SkillEntry
+from atlas_merit.schemas import Profile, SkillEntry
 
 
 class ProfileError(Exception):

@@ -1,15 +1,15 @@
 """Assemble the six-node StateGraph. Models are injected; no IO here."""
 from langgraph.graph import END, StateGraph
 
-from merit.nodes.approval import approval
-from merit.nodes.extract import make_extract_node
-from merit.nodes.ingest import ingest
-from merit.nodes.match import make_match_node
-from merit.nodes.narrative import make_narrative_node
-from merit.nodes.report import report
-from merit.schemas import Profile
-from merit.state import MeritState
-from merit.telemetry import traced_node
+from atlas_merit.nodes.approval import approval
+from atlas_merit.nodes.extract import make_extract_node
+from atlas_merit.nodes.ingest import ingest
+from atlas_merit.nodes.match import make_match_node
+from atlas_merit.nodes.narrative import make_narrative_node
+from atlas_merit.nodes.report import report
+from atlas_merit.schemas import Profile
+from atlas_merit.state import MeritState
+from atlas_merit.telemetry import traced_node
 
 
 def build_graph(profile: Profile, extractor, judge, writer, checkpointer):

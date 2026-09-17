@@ -1,7 +1,7 @@
 # tests/conftest.py
 import pytest
 
-from merit import mail
+from atlas_merit import mail
 
 
 @pytest.fixture(autouse=True)

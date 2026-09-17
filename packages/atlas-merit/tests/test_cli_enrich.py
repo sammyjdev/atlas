@@ -4,7 +4,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from merit import cli, fetch, queue
+from atlas_merit import cli, fetch, queue
 
 runner = CliRunner()
 

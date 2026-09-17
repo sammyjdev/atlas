@@ -4,9 +4,9 @@ import uuid
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
-from merit.graph.build import build_graph
-from merit.profile import load_profile
-from merit.schemas import ResidueVerdicts
+from atlas_merit.graph.build import build_graph
+from atlas_merit.profile import load_profile
+from atlas_merit.schemas import ResidueVerdicts
 from tests.test_profile import FIXTURE
 
 
@@ -27,7 +27,7 @@ class FakeWriter:
 
 
 def _graph():
-    from merit.schemas import Demand, Demands
+    from atlas_merit.schemas import Demand, Demands
 
     profile = load_profile(FIXTURE)
     extractor = FakeStructured(
@@ -76,7 +76,7 @@ def test_non_bool_resume_reinterrupts():
 def test_build_graph_wraps_nodes_in_spans_when_otel_enabled(monkeypatch):
     from types import SimpleNamespace
 
-    from merit import telemetry
+    from atlas_merit import telemetry
 
     class FakeSpanCM:
         def __init__(self, recorder, name):
@@ -117,9 +117,9 @@ def test_build_graph_wraps_nodes_in_spans_when_otel_enabled(monkeypatch):
 
 
     assert tracer.spans == [
-        "merit.node.ingest",
-        "merit.node.extract",
-        "merit.node.match",
-        "merit.node.report",
-        "merit.node.approval",
+        "atlas_merit.node.ingest",
+        "atlas_merit.node.extract",
+        "atlas_merit.node.match",
+        "atlas_merit.node.report",
+        "atlas_merit.node.approval",
     ]

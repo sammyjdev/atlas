@@ -1,9 +1,9 @@
 """Two-stage matching: deterministic alias resolution, then LLM judgment on the residue."""
 import json
 
-from merit.profile import resolve
-from merit.schemas import Profile, Verdict
-from merit.state import MeritState
+from atlas_merit.profile import resolve
+from atlas_merit.schemas import Profile, Verdict
+from atlas_merit.state import MeritState
 
 MATCH_PROMPT = """You judge whether a candidate profile covers each demanded skill.
 

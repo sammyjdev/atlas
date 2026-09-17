@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from merit import cli, track
+from atlas_merit import cli, track
 
 runner = CliRunner()
 
@@ -563,8 +563,8 @@ def test_set_status_preserves_dossier_dir(tmp_path, monkeypatch):
 def test_track_module_imports_no_merit_siblings():
     source = Path(track.__file__).read_text(encoding="utf-8")
 
-    assert "from merit" not in source
-    assert "import merit" not in source
+    assert "from atlas_merit" not in source
+    assert "import atlas_merit" not in source
 
 
 def test_dossier_root_derives_from_db_parent(tmp_path, monkeypatch):

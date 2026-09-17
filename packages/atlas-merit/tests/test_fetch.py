@@ -1,5 +1,5 @@
 # tests/test_fetch.py
-from merit.fetch import html_to_text
+from atlas_merit.fetch import html_to_text
 
 HTML = """
 <html><head><style>.x{color:red}</style><script>var a=1;</script></head>

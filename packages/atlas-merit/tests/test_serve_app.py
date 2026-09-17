@@ -1,9 +1,9 @@
 # tests/test_serve_app.py
 from fastapi.testclient import TestClient
 
-from merit import telemetry
-from merit.serve import app as serve_app
-from merit.serve.app import create_app
+from atlas_merit import telemetry
+from atlas_merit.serve import app as serve_app
+from atlas_merit.serve.app import create_app
 
 
 def _client() -> TestClient:

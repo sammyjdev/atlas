@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 import pytest
 from typer.testing import CliRunner
 
-from merit import cli, track
+from atlas_merit import cli, track
 
 runner = CliRunner()
 

@@ -61,8 +61,8 @@ Two separate things use LangSmith, and only one of them touches the code.
 
 ```
 pip install '.[goldenset]'
-python -m merit.goldenset upload   # create/refresh dataset "merit-golden"
-python -m merit.goldenset run      # experiment over the dataset
+python -m atlas_merit.goldenset upload   # create/refresh dataset "merit-golden"
+python -m atlas_merit.goldenset run      # experiment over the dataset
 ```
 
 Without the extra both commands raise `LangSmithUnavailable` naming the install, the same way the optional chat backends do. `sanitize()` runs before anything leaves the machine and the tests pin that contract.

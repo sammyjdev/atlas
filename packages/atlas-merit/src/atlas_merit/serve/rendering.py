@@ -23,8 +23,8 @@ def nav_counts() -> dict | None:
     Cached on (paths, mtimes) - the inbox dir mtime moves on ingest/discard,
     the db on track writes, the queue file on append/discard."""
     # Lazy imports: views import this module, so top-level would be circular.
-    from merit import track
-    from merit.serve.views import vagas
+    from atlas_merit import track
+    from atlas_merit.serve.views import vagas
 
     try:
         inbox = vagas._inbox_dir()

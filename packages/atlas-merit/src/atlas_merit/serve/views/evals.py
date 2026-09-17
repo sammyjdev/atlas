@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request
 
-from merit.serve import rendering
+from atlas_merit.serve import rendering
 
 router = APIRouter()
 

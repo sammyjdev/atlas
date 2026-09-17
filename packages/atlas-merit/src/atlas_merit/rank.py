@@ -8,8 +8,8 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import NamedTuple
 
-from merit.profile import resolve
-from merit.schemas import Profile
+from atlas_merit.profile import resolve
+from atlas_merit.schemas import Profile
 
 DEFAULT_TOP = 20
 WEIGHTS = {"strong": 2, "partial": 1, "gap": -1}

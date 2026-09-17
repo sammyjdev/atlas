@@ -3,8 +3,8 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from merit import cli
-from merit.mail import MailError
+from atlas_merit import cli
+from atlas_merit.mail import MailError
 
 runner = CliRunner()
 
@@ -106,7 +106,7 @@ CONV_RAW = (
 
 
 def test_ingest_mail_routes_replies_of_tracked_threads_to_dossier(tmp_path, monkeypatch):
-    from merit import track
+    from atlas_merit import track
 
     db = tmp_path / "merit.db"
     monkeypatch.setenv("MERIT_DB", str(db))
@@ -137,7 +137,7 @@ def test_ingest_mail_routes_replies_of_tracked_threads_to_dossier(tmp_path, monk
 
 
 def test_track_backfill_threads_cli(tmp_path, monkeypatch):
-    from merit import track
+    from atlas_merit import track
 
     posting = tmp_path / "vaga.md"
     posting.write_text(

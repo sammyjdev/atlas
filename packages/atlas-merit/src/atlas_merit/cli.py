@@ -13,15 +13,22 @@ import typer
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
-from merit import mail as mail_module
-from merit import queue, track
-from merit.fetch import fetch_job, fetch_posting, job_id, parse_job
-from merit.graph.build import build_graph
-from merit.mail import INBOX_DIR, MailError, connect, fetch_messages, ingest_alerts, ingest_messages
-from merit.models import build_extractor, build_judge, build_writer
-from merit.profile import load_profile, profile_hash, strong_terms
-from merit.rank import DEFAULT_TOP, rank_dir
-from merit.rank import render as render_rank
+from atlas_merit import mail as mail_module
+from atlas_merit import queue, track
+from atlas_merit.fetch import fetch_job, fetch_posting, job_id, parse_job
+from atlas_merit.graph.build import build_graph
+from atlas_merit.mail import (
+    INBOX_DIR,
+    MailError,
+    connect,
+    fetch_messages,
+    ingest_alerts,
+    ingest_messages,
+)
+from atlas_merit.models import build_extractor, build_judge, build_writer
+from atlas_merit.profile import load_profile, profile_hash, strong_terms
+from atlas_merit.rank import DEFAULT_TOP, rank_dir
+from atlas_merit.rank import render as render_rank
 
 app = typer.Typer(add_completion=False)
 track_app = typer.Typer(add_completion=False)
@@ -130,7 +137,7 @@ def ingest_mail(
         raise typer.Exit(1)
 
     if install_agent:
-        from merit.serve import agent as launch_agent
+        from atlas_merit.serve import agent as launch_agent
 
         written = launch_agent.install_sync_agent(
             Path.home(),
@@ -144,7 +151,7 @@ def ingest_mail(
         return
 
     if uninstall_agent:
-        from merit.serve import agent as launch_agent
+        from atlas_merit.serve import agent as launch_agent
 
         if launch_agent.uninstall_sync_agent(Path.home()):
             typer.echo("Sync LaunchAgent removed")
@@ -329,7 +336,7 @@ def serve(
         raise typer.Exit(1)
 
     if install_agent:
-        from merit.serve import agent as launch_agent
+        from atlas_merit.serve import agent as launch_agent
 
         binary = launch_agent.resolve_binary()
         written = launch_agent.install_agent(Path.home(), binary, port)
@@ -338,7 +345,7 @@ def serve(
         return
 
     if uninstall_agent:
-        from merit.serve import agent as launch_agent
+        from atlas_merit.serve import agent as launch_agent
 
         if launch_agent.uninstall_agent(Path.home()):
             typer.echo("LaunchAgent removed")
@@ -348,7 +355,7 @@ def serve(
 
     import uvicorn
 
-    from merit.serve.app import HOST, create_app
+    from atlas_merit.serve.app import HOST, create_app
 
     assert HOST == "127.0.0.1"  # noqa: S101
     typer.echo(f"MERIT serve on http://{HOST}:{port} (localhost only)")

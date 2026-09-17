@@ -2,8 +2,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from merit import track
-from merit.serve.app import create_app
+from atlas_merit import track
+from atlas_merit.serve.app import create_app
 
 
 @pytest.fixture
@@ -83,8 +83,8 @@ def test_pipeline_cards_show_followup_radar(tmp_path, monkeypatch):
 
     from fastapi.testclient import TestClient
 
-    from merit import track
-    from merit.serve.app import create_app
+    from atlas_merit import track
+    from atlas_merit.serve.app import create_app
 
     db = tmp_path / "merit.db"
     monkeypatch.setenv("MERIT_DB", str(db))

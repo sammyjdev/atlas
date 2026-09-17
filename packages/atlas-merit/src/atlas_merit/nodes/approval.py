@@ -2,7 +2,7 @@
 from langgraph.graph import END
 from langgraph.types import Command, interrupt
 
-from merit.state import MeritState
+from atlas_merit.state import MeritState
 
 
 def approval(state: MeritState) -> Command:

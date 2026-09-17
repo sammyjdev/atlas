@@ -4,7 +4,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from merit.fetch import fetch_job, job_id, parse_job
+from atlas_merit.fetch import fetch_job, job_id, parse_job
 
 FIXTURES = Path(__file__).parent / "fixtures" / "linkedin"
 

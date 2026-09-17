@@ -1,6 +1,6 @@
 import pytest
 
-from merit.models import DEEPINFRA_BASE, build_chat_model
+from atlas_merit.models import DEEPINFRA_BASE, build_chat_model
 
 
 def test_env_mapping(monkeypatch):

@@ -23,9 +23,9 @@ GOLDEN = CORPUS / "golden.json"  # {"<posting-file>": {"<demand>": "strong|parti
 def test_golden_verdicts_agree():
     from langgraph.checkpoint.memory import MemorySaver
 
-    from merit.graph.build import build_graph
-    from merit.models import build_extractor, build_judge, build_writer
-    from merit.profile import load_profile
+    from atlas_merit.graph.build import build_graph
+    from atlas_merit.models import build_extractor, build_judge, build_writer
+    from atlas_merit.profile import load_profile
 
     profile = load_profile("profile/profile.yaml")
     golden = json.loads(GOLDEN.read_text())

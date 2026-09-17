@@ -1,7 +1,7 @@
 # tests/test_narrative.py
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
-from merit.nodes.narrative import NARRATIVE_PROMPT, make_narrative_node
+from atlas_merit.nodes.narrative import NARRATIVE_PROMPT, make_narrative_node
 
 VERDICTS = [
     {"demand": "FastAPI", "verdict": "strong", "evidence": ["api: 40 routes"],
