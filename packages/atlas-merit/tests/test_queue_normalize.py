@@ -213,3 +213,17 @@ def test_migrated_file_stays_json_array_with_expected_keys_and_permissions(tmp_p
     assert not list(path.parent.glob("*.tmp"))
     mode = path.stat().st_mode
     assert mode & 0o077 == 0
+
+
+def test_queue_default_path_lives_under_atlas_home(monkeypatch, tmp_path):
+    """The queue file follows ATLAS_HOME, not the working directory."""
+    import importlib
+
+    from atlas_merit import queue as queue_module
+
+    monkeypatch.setenv("ATLAS_HOME", str(tmp_path))
+    importlib.reload(queue_module)
+    assert queue_module.default_queue_path() == tmp_path / "merit" / "queue.json"
+
+    monkeypatch.setenv("ATLAS_HOME", str(tmp_path / "other"))
+    assert queue_module.default_queue_path() == tmp_path / "other" / "merit" / "queue.json"

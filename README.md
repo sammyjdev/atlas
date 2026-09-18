@@ -2,12 +2,12 @@
 
 Public monorepo for three career tools that share one core:
 
-- MERIT: job postings, evidence matching and application tracking.
+- MERIT (`atlas-merit`): job postings, evidence matching and application tracking.
 - ORBIT: AI research radar ranked against the user's profile.
 - SAGE: interview study material from markdown.
 
-Status: bootstrap. Only `atlas-kit` (core) is in the repo today; MERIT, ORBIT
-and SAGE land in later phases.
+Status: bootstrap. Only `atlas-kit` and `atlas-merit` are in the repository today,
+with ORBIT and SAGE landing in later phases.
 
 Modules depend only on the core package `atlas-kit` (import name
 `atlas_core`) and never on each other. They exchange data through an

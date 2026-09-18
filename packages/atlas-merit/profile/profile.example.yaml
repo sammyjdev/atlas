@@ -3,7 +3,8 @@ skills:
     name: FastAPI
     status: strong
     evidence:
-      - "example-api: 40-route production service"
+      - text: "example-api: 40-route production service"
+        source: "https://github.com/example/example-api"
   - id: langgraph
     name: LangGraph
     status: gap

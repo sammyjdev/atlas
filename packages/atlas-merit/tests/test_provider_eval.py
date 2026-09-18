@@ -27,7 +27,9 @@ def test_golden_verdicts_agree():
     from atlas_merit.models import build_extractor, build_judge, build_writer
     from atlas_merit.profile import load_profile
 
-    profile = load_profile("profile/profile.yaml")
+    from atlas_core.config import atlas_home
+
+    profile = load_profile(atlas_home() / "profile.yaml")
     golden = json.loads(GOLDEN.read_text())
     disagreements = []
     for posting_file, expected in golden.items():

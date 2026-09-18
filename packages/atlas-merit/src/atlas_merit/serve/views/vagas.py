@@ -51,7 +51,7 @@ def _inbox_dir() -> Path:
 
 
 def _queue_path() -> Path:
-    return Path(os.environ.get("MERIT_QUEUE_PATH", str(queue.QUEUE_PATH)))
+    return Path(os.environ.get("MERIT_QUEUE_PATH", str(queue.default_queue_path())))
 
 
 def _db_path() -> str:

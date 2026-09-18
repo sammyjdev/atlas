@@ -62,6 +62,13 @@ def _graph(profile_path: str, saver: SqliteSaver):
     return build_graph(profile, build_extractor(), build_judge(), build_writer(), saver)
 
 
+def _queue_path(explicit: str | None) -> Path:
+    """The queue file: the option wins, then MERIT_QUEUE_PATH, then ATLAS_HOME."""
+    if explicit:
+        return Path(explicit)
+    return Path(os.environ.get("MERIT_QUEUE_PATH", queue.default_queue_path()))
+
+
 @app.command()
 def match(
     posting: str,
@@ -127,7 +134,7 @@ def rank(
 @app.command("ingest-mail")
 def ingest_mail(
     out_dir: str = typer.Option(str(INBOX_DIR), "--out-dir"),
-    queue_path: str = typer.Option(str(queue.QUEUE_PATH), "--queue-path"),
+    queue_path: str | None = typer.Option(None, "--queue-path"),
     full: bool = typer.Option(False, "--full"),
     mailbox: list[str] = typer.Option(  # noqa: B008 - typer reads defaults from the call
         [], "--mailbox", help="Gmail label; repeatable with --install-agent"
@@ -207,7 +214,7 @@ def ingest_mail(
         typer.echo(f"contatos registrados {len(events)}", err=True)
 
     ingested, skipped = ingest_messages(raws, Path(out_dir))
-    queued, alert_skipped = ingest_alerts(raws, Path(queue_path))
+    queued, alert_skipped = ingest_alerts(raws, _queue_path(queue_path))
     for item in ingested:
         typer.echo(str(item.path))
         typer.echo(f"  merit match {item.path}")
@@ -222,16 +229,16 @@ def ingest_mail(
 
 @app.command("queue")
 def queue_cmd(
-    queue_path: str = typer.Option(str(queue.QUEUE_PATH), "--queue-path"),
+    queue_path: str | None = typer.Option(None, "--queue-path"),
     all_: bool = typer.Option(False, "--all"),
     profile: str | None = typer.Option(None, "--profile"),
     prune_days: int = typer.Option(0, "--prune-days", help="Drop entries older than N days"),
 ):
     if prune_days:
-        removed = queue.prune(Path(queue_path), days=prune_days)
+        removed = queue.prune(_queue_path(queue_path), days=prune_days)
         typer.echo(f"pruned {removed} entries older than {prune_days} days")
         return
-    entries = queue.load_entries(Path(queue_path))
+    entries = queue.load_entries(_queue_path(queue_path))
     if not entries:
         typer.echo("No queued postings yet. Run `merit ingest-mail` to check for job alerts.")
         return
@@ -400,7 +407,7 @@ def _posting_markdown(entry: queue.Entry, posting) -> str:
 @app.command()
 def enrich(
     days: int = typer.Option(15, "--days"),
-    queue_path: str = typer.Option(str(queue.QUEUE_PATH), "--queue-path"),
+    queue_path: str | None = typer.Option(None, "--queue-path"),
     out: str = typer.Option(POSTINGS_DIR, "--out"),
 ):
     """Fetch the real description for recent queue entries so `merit rank` can
@@ -409,7 +416,7 @@ def enrich(
     out_dir = Path(out)
     out_dir.mkdir(parents=True, exist_ok=True)
     cutoff = (datetime.now(UTC).date() - timedelta(days=days)).isoformat()
-    entries = [e for e in queue.load_entries(Path(queue_path)) if e.alert_date >= cutoff]
+    entries = [e for e in queue.load_entries(_queue_path(queue_path)) if e.alert_date >= cutoff]
 
     written = skipped = dropped = 0
     for entry in entries:
@@ -432,7 +439,7 @@ def enrich(
             continue
         posting = parse_job(html) if html is not None else None
         if posting is None or posting.expired:
-            queue.discard(Path(queue_path), entry.url)
+            queue.discard(_queue_path(queue_path), entry.url)
             dropped += 1
         elif not posting.description.strip():
             typer.echo(f"no description parsed: {entry.url}", err=True)

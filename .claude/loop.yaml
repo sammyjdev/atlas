@@ -1,0 +1,31 @@
+# Onboards atlas to the global agentic loop.
+
+# wiring
+repo_slug: sammyjdev/atlas
+default_branch: main
+gate_cmd: "uv run pytest -q && uv run ruff check packages && uv run lint-imports"
+setup_cmd: "uv sync --all-packages --dev"
+labels:
+  ready: agent:ready
+  blocked: agent:blocked
+
+# posture (public showcase repo; personal data stays out of git by design)
+posture: public
+# risk_areas ARM the classifier floor: keyword match in issue text forces
+# effective_tier=Legendary. Keywords mirror the spec's Security section.
+risk_areas:
+  - prompt-injection: [prompt injection, untrusted posting, verdict post-validation, D8]
+  - fetch: [SSRF, urlopen, fetch_posting, scheme allowlist, S310]
+  - secrets: [gitleaks, credential, api key, .env, LANGSMITH_API_KEY]
+  - personal-data: [profile.yaml, corpus, recruiter, LANGSMITH_HIDE]
+quality_rubric:
+  testability: true
+  scalability: true
+  progression: true
+
+cross_review: true
+
+# Notes for the loop operator:
+# - Tests run from the workspace root with `uv run pytest`.
+# - Unit/graph tests are offline by definition; anything hitting a provider
+#   is @pytest.mark.provider and deselected by default (pyproject addopts).

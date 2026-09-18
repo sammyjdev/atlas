@@ -10,7 +10,13 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
 
-QUEUE_PATH = Path("corpus/queue.json")
+from atlas_core.config import module_home
+
+
+def default_queue_path() -> Path:
+    """The queue file, under ATLAS_HOME so it does not follow the process cwd."""
+    return module_home("merit") / "queue.json"
+
 JOB_URL_MARKER = "/jobs/view/"
 
 _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
