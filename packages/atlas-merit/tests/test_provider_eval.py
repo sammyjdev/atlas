@@ -21,13 +21,12 @@ GOLDEN = CORPUS / "golden.json"  # {"<posting-file>": {"<demand>": "strong|parti
     reason="corpus or provider credentials absent",
 )
 def test_golden_verdicts_agree():
+    from atlas_core.config import atlas_home
     from langgraph.checkpoint.memory import MemorySaver
 
     from atlas_merit.graph.build import build_graph
     from atlas_merit.models import build_extractor, build_judge, build_writer
     from atlas_merit.profile import load_profile
-
-    from atlas_core.config import atlas_home
 
     profile = load_profile(atlas_home() / "profile.yaml")
     golden = json.loads(GOLDEN.read_text())

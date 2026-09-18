@@ -15,12 +15,16 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from atlas_core.config import module_home
+
 from atlas_merit import queue
 from atlas_merit.fetch import html_to_text
 
 DEFAULT_HOST = "imap.gmail.com"
 DEFAULT_MAILBOX = "merit"
-INBOX_DIR = Path("corpus/inbox")
+def inbox_dir() -> Path:
+    """Recruiter mail lands under ATLAS_HOME, never in the checkout."""
+    return module_home("merit") / "corpus" / "inbox"
 RECRUITER_DOMAIN = "linkedin.com"
 RECRUITER_SUBJECT_MARKERS = ("sent you a message", "new message from", "inmail")
 # Real InMail notifications carry the opportunity title as subject (no marker);

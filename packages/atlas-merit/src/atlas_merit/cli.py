@@ -19,10 +19,10 @@ from atlas_merit import queue, track
 from atlas_merit.fetch import fetch_job, fetch_posting, job_id, parse_job
 from atlas_merit.graph.build import build_graph
 from atlas_merit.mail import (
-    INBOX_DIR,
     MailError,
     connect,
     fetch_messages,
+    inbox_dir,
     ingest_alerts,
     ingest_messages,
 )
@@ -133,7 +133,7 @@ def rank(
 
 @app.command("ingest-mail")
 def ingest_mail(
-    out_dir: str = typer.Option(str(INBOX_DIR), "--out-dir"),
+    out_dir: str | None = typer.Option(None, "--out-dir"),
     queue_path: str | None = typer.Option(None, "--queue-path"),
     full: bool = typer.Option(False, "--full"),
     mailbox: list[str] = typer.Option(  # noqa: B008 - typer reads defaults from the call
@@ -183,7 +183,9 @@ def ingest_mail(
         raise typer.Exit(1) from None
 
     active_mailbox = os.environ.get("MERIT_IMAP_MAILBOX", mail_module.DEFAULT_MAILBOX)
-    cursor_path = Path(out_dir) / mail_module.cursor_name(active_mailbox)
+    out_path = Path(out_dir) if out_dir else inbox_dir()
+    out_path.mkdir(parents=True, exist_ok=True)
+    cursor_path = out_path / mail_module.cursor_name(active_mailbox)
     if full:
         cursor_path.unlink(missing_ok=True)
     conn.merit_cursor = True
@@ -200,7 +202,7 @@ def ingest_mail(
     # Replies inside already-tracked LinkedIn threads register as contact on
     # the application's dossier instead of becoming new vagas.
     by_thread = track.threads(_db_path())
-    events, raws = mail_module.match_conversations(raws, set(by_thread), Path(out_dir))
+    events, raws = mail_module.match_conversations(raws, set(by_thread), out_path)
     for event in events:
         track.log(
             _db_path(),
@@ -209,11 +211,11 @@ def ingest_mail(
             file="thread",
             dossier_root=_dossier_root(),
         )
-        mail_module.mark_seen(Path(out_dir), event.key)
+        mail_module.mark_seen(out_path, event.key)
     if events:
         typer.echo(f"contatos registrados {len(events)}", err=True)
 
-    ingested, skipped = ingest_messages(raws, Path(out_dir))
+    ingested, skipped = ingest_messages(raws, out_path)
     queued, alert_skipped = ingest_alerts(raws, _queue_path(queue_path))
     for item in ingested:
         typer.echo(str(item.path))
@@ -382,7 +384,9 @@ def track_show(app_id: int):
         raise typer.Exit(1) from None
 
 
-POSTINGS_DIR = "corpus/postings"
+def postings_dir() -> Path:
+    """Ingested postings live under ATLAS_HOME, never in the checkout."""
+    return module_home("merit") / "corpus" / "postings"
 ENRICH_PAUSE = 0.8
 
 
@@ -408,12 +412,12 @@ def _posting_markdown(entry: queue.Entry, posting) -> str:
 def enrich(
     days: int = typer.Option(15, "--days"),
     queue_path: str | None = typer.Option(None, "--queue-path"),
-    out: str = typer.Option(POSTINGS_DIR, "--out"),
+    out: str | None = typer.Option(None, "--out"),
 ):
     """Fetch the real description for recent queue entries so `merit rank` can
     score them. Closed and deleted postings are dropped from the queue instead
     of being written - evidence of death, never a guess from the date."""
-    out_dir = Path(out)
+    out_dir = Path(out) if out else postings_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
     cutoff = (datetime.now(UTC).date() - timedelta(days=days)).isoformat()
     entries = [e for e in queue.load_entries(_queue_path(queue_path)) if e.alert_date >= cutoff]
