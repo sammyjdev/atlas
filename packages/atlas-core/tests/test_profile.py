@@ -31,3 +31,18 @@ def test_evidence_requires_a_source():
         profile.SkillEntry(
             id="x", name="X", status="strong", evidence=[{"text": "no source"}]
         )
+
+
+def test_load_profile_reads_utf8_regardless_of_locale(tmp_path):
+    path = tmp_path / "profile.yaml"
+    path.write_text(
+        'skills:\n'
+        '  - id: observabilidade\n'
+        '    name: "Observabilidade e métricas"\n'
+        '    status: partial\n'
+        '    evidence: []\n'
+        '    claims: []\n',
+        encoding="utf-8",
+    )
+    loaded = profile.load_profile(path)
+    assert loaded.skills[0].name == "Observabilidade e métricas"

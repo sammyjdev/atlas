@@ -19,3 +19,25 @@ jobs:
       - run: uv run ruff check packages
       - run: uv run lint-imports
       - run: uv run pytest
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # A directory scan, not the action's pull-request range scan: the MERIT
+      # subtree import gave this repository a second root commit, and the range
+      # the action derives (base^..head) is unresolvable across it.
+      - name: Scan the working tree for secrets
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            dir /repo --redact --exit-code 1 --verbose
+
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --all-packages
+      - run: uv run --with pip-audit pip-audit

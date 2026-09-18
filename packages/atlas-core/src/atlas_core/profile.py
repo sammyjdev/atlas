@@ -47,5 +47,5 @@ class Profile(BaseModel):
 
 
 def load_profile(path: Path) -> Profile:
-    with path.open() as handle:
+    with path.open(encoding="utf-8") as handle:
         return Profile.model_validate(yaml.safe_load(handle))

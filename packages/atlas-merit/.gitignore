@@ -1,0 +1,8 @@
+__pycache__/
+*.egg-info/
+.venv/
+profile/profile.yaml
+corpus/*
+!corpus/README.md
+*.db
+.env
