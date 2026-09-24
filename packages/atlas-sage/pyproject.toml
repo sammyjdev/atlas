@@ -1,0 +1,32 @@
+[project]
+name = "atlas-sage"
+version = "0.1.0"
+description = "SAGE: study pipeline, vault writer, and Anki export"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-kit",
+    "requests>=2.32",
+    "pyyaml>=6.0",
+    "tavily-python>=0.5",
+    "genanki>=0.13",
+]
+
+[project.scripts]
+sage = "atlas_sage.main:cli"
+
+[project.entry-points."atlas.modules"]
+sage = "atlas_sage.main:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_sage"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
