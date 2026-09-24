@@ -14,3 +14,11 @@ def atlas_home() -> Path:
 
 def module_home(name: str) -> Path:
     return atlas_home() / name
+
+
+def atlas_vault() -> Path:
+    """Private checkout root. No default and no cwd fallback."""
+    raw = os.environ.get("ATLAS_VAULT")
+    if not raw:
+        raise RuntimeError("ATLAS_VAULT is not set")
+    return Path(raw).expanduser()

@@ -21,3 +21,23 @@ def test_module_home_is_a_subdirectory(monkeypatch, tmp_path):
 def test_module_home_expands_a_tilde(monkeypatch):
     monkeypatch.setenv("ATLAS_HOME", "~/somewhere")
     assert config.module_home("merit") == Path.home() / "somewhere" / "merit"
+
+
+def test_atlas_vault_reads_the_environment(monkeypatch, tmp_path):
+    monkeypatch.setenv("ATLAS_VAULT", str(tmp_path / "checkout"))
+    assert config.atlas_vault() == tmp_path / "checkout"
+
+
+def test_atlas_vault_expands_a_tilde(monkeypatch):
+    monkeypatch.setenv("ATLAS_VAULT", "~/sage")
+    assert config.atlas_vault() == Path.home() / "sage"
+
+
+def test_atlas_vault_missing_is_an_error(monkeypatch):
+    monkeypatch.delenv("ATLAS_VAULT", raising=False)
+    try:
+        config.atlas_vault()
+    except RuntimeError as exc:
+        assert "ATLAS_VAULT" in str(exc)
+    else:
+        raise AssertionError("missing ATLAS_VAULT must fail")
