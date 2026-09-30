@@ -14,7 +14,7 @@ import yaml
 from atlas_core.config import atlas_vault
 
 from .anki import export as export_anki
-from .jds import load_jds, pending_jds, prioritize_gaps
+from .jds import pending_jds, prioritize_gaps, topic_source_texts
 from .live import DEFAULT_MAX_TURNS, LiveSession, parse_turn
 from .llm import LLMError, RateLimitError, writer_call
 from .parser import ParseError
@@ -84,7 +84,7 @@ def refill_queue(state: State) -> None:
     gaps = find_gaps(syllabus, state.done, state.queue)
     if not gaps:
         return
-    jd_texts = load_jds(jds_path())
+    jd_texts = topic_source_texts(atlas_vault(), jds_path())
     today = date.today().isoformat()
     for item, source in prioritize_gaps(gaps, jd_texts):
         state.queue.append(

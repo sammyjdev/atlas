@@ -1,12 +1,21 @@
 """Stage-1 deterministic batch scoring: scan a directory of postings against a
 profile's alias table and skill names. No LLM, no network, no persistence -
 reconnaissance only, so the owner can pick which postings deserve `merit match`.
+After a successful pass, if ATLAS_VAULT is set, a DemandSignal is published
+into the vault exchange.
 """
+import os
 import re
+import subprocess
+import sys
+from collections import Counter
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import NamedTuple
+
+from atlas_core.contracts import DemandSignal, SkillDemand
+from atlas_core.exchange import VaultGitStore, new_id
 
 from atlas_merit.profile import Profile, resolve
 
@@ -156,6 +165,45 @@ def rank_dir(profile: Profile, directory: Path) -> tuple[list[Row], list[str]]:
         )
     rows.sort(key=lambda r: (-r.score, r.file))
     return rows, skipped
+
+
+def demand_signal_from_rank(profile: Profile, directory: Path, rows: list[Row]) -> DemandSignal:
+    counts: Counter[str] = Counter()
+    for row in rows:
+        text = (directory / row.file).read_text(encoding="utf-8")
+        names = hit_names(profile, text)
+        for group in ("strong", "partial"):
+            counts.update(names[group])
+    total = sum(counts.values())
+    skills = [
+        SkillDemand(name=name, count=n, share=(n / total if total else 0.0))
+        for name, n in counts.most_common()
+    ]
+    today = datetime.now(UTC).date()
+    return DemandSignal(
+        id=new_id(),
+        window_start=today,
+        window_end=today,
+        postings=len(rows),
+        skills=skills,
+    )
+
+
+def publish_rank_signal(profile: Profile, directory: Path, rows: list[Row]) -> str | None:
+    if not os.environ.get("ATLAS_VAULT"):
+        return None
+    from atlas_core.config import atlas_vault
+
+    vault = atlas_vault()
+    if not (vault / ".git").is_dir():
+        return None
+    try:
+        return VaultGitStore(vault).publish(
+            "demand", demand_signal_from_rank(profile, directory, rows)
+        )
+    except subprocess.CalledProcessError as exc:
+        sys.stderr.write((exc.stderr or str(exc)).rstrip() + "\n")
+        return None
 
 
 def render(rows: list[Row], skipped: list[str], top: int = DEFAULT_TOP) -> str:

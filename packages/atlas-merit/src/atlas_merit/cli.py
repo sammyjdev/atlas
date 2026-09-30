@@ -28,7 +28,7 @@ from atlas_merit.mail import (
 )
 from atlas_merit.models import build_extractor, build_judge, build_writer
 from atlas_merit.profile import load_profile, profile_hash, strong_terms
-from atlas_merit.rank import DEFAULT_TOP, rank_dir
+from atlas_merit.rank import DEFAULT_TOP, publish_rank_signal, rank_dir
 from atlas_merit.rank import render as render_rank
 
 app = typer.Typer(add_completion=False)
@@ -129,6 +129,7 @@ def rank(
     prof = load_profile(_profile_path(profile))
     rows, skipped = rank_dir(prof, posting_dir)
     typer.echo(render_rank(rows, skipped, top))
+    publish_rank_signal(prof, posting_dir, rows)
 
 
 @app.command("ingest-mail")
