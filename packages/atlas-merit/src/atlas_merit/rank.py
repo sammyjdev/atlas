@@ -195,7 +195,7 @@ def publish_rank_signal(profile: Profile, directory: Path, rows: list[Row]) -> s
     from atlas_core.config import atlas_vault
 
     vault = atlas_vault()
-    if not (vault / ".git").is_dir():
+    if not (vault / ".git").exists():
         return None
     try:
         return VaultGitStore(vault).publish(

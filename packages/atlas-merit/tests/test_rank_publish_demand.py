@@ -42,6 +42,21 @@ def test_cli_rank_publishes_demand_signal_when_vault_set(tmp_path: Path, monkeyp
     assert any(s.name == "FastAPI" for s in signal.skills)
 
 
+def test_cli_rank_publishes_when_vault_git_is_a_file(tmp_path: Path, monkeypatch) -> None:
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    (vault / ".git").write_text("gitdir: /tmp/fake.git\n")
+    monkeypatch.setenv("ATLAS_VAULT", str(vault))
+    monkeypatch.setattr("atlas_merit.rank.VaultGitStore._git", lambda self, *args: None)
+    postings = tmp_path / "postings"
+    postings.mkdir()
+    (postings / "a.md").write_text("# Role\n\nFastAPI required.\n", encoding="utf-8")
+    result = runner.invoke(cli.app, ["rank", str(postings), "--profile", str(FIXTURE)])
+    assert result.exit_code == 0, result.output
+    files = list((vault / "exchange" / "demand").glob("*.json"))
+    assert len(files) == 1
+
+
 def test_cli_rank_skips_publish_without_atlas_vault(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.delenv("ATLAS_VAULT", raising=False)
     (tmp_path / "a.md").write_text("# Role\n\nFastAPI required.\n", encoding="utf-8")

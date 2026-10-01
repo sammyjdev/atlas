@@ -34,7 +34,7 @@ def test_publish_advances_cursor_then_reread_is_empty(tmp_path: Path, monkeypatc
     rel = Path("exchange") / "demand" / f"{item_id}.json"
     assert (vault / rel).is_file()
     assert recorded[0] == ("add", "--", rel.as_posix())
-    assert recorded[1][0] == "commit"
+    assert recorded[1] == ("commit", "-m", f"exchange demand {item_id}", "--", rel.as_posix())
     assert recorded[2][0] == "push"
 
     cursor = Cursor(vault / "state" / "exchange-cursor-demand")

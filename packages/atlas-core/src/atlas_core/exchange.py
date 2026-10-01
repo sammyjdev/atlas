@@ -71,7 +71,7 @@ class VaultGitStore:
         item_id = self._files.publish(channel, item)
         rel = Path("exchange") / channel / f"{item_id}.json"
         self._git("add", "--", rel.as_posix())
-        self._git("commit", "-m", f"exchange {channel} {item_id}")
+        self._git("commit", "-m", f"exchange {channel} {item_id}", "--", rel.as_posix())
         self._git("push", "-u", "origin", "HEAD")
         return item_id
 
