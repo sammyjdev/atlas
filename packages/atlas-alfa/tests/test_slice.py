@@ -24,6 +24,12 @@ def test_active_list_hides_terminal_and_keeps_offer(tmp_path, monkeypatch):
     track.add(
         db_path, "d.md", title="Saida", company="Delta", status="withdrawn", dossier_root=root
     )
+    track.add(
+        db_path, "e.md", title="Aceite", company="Epsilon", status="accepted", dossier_root=root
+    )
+    track.add(
+        db_path, "f.md", title="Arquivo", company="Zeta", status="archived", dossier_root=root
+    )
     client = TestClient(create_app())
 
     response = client.get("/")
@@ -34,8 +40,36 @@ def test_active_list_hides_terminal_and_keeps_offer(tmp_path, monkeypatch):
     assert "Oferta" in text
     assert "Recusa" not in text
     assert "Saida" not in text
+    assert "Aceite" not in text
+    assert "Arquivo" not in text
     assert "nova candidatura" not in text.lower()
     assert list(tmp_path.glob("*.db")) == [tmp_path / "merit.db"]
+
+
+def test_status_moves_accepted_off_the_list(tmp_path, monkeypatch):
+    db_path = _db(tmp_path, monkeypatch)
+    root = tmp_path / "applications"
+    app_id = track.add(
+        db_path, "a.md", title="Backend", company="Acme", status="applied", dossier_root=root
+    )
+    client = TestClient(create_app())
+
+    missing = client.post("/processos/99/status", data={"status": "accepted"})
+    assert missing.status_code == 404
+
+    invalid = client.post(f"/processos/{app_id}/status", data={"status": "ghosting"})
+    assert invalid.status_code == 422
+    assert "Backend" in client.get("/").text
+
+    accepted = client.post(f"/processos/{app_id}/status", data={"status": "accepted"})
+    assert accepted.status_code == 200
+    assert "Backend" not in client.get("/").text
+
+
+def test_enviar_is_not_a_route(tmp_path, monkeypatch):
+    _db(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+    assert client.post("/enviar").status_code == 404
 
 
 def _count(db_path: str) -> int:

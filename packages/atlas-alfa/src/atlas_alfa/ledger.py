@@ -7,10 +7,6 @@ from pathlib import Path
 from atlas_core.config import module_home
 from atlas_merit import track
 
-# Product terminals that already exist as SQL statuses: recusa, saí.
-# aceite and arquivo have no column. offer stays on the list.
-TERMINAL = ("rejected", "withdrawn")
-
 LABELS = {
     "found": "encontrada",
     "queued": "na fila",
@@ -19,12 +15,14 @@ LABELS = {
     "screening": "triagem",
     "interview": "entrevista",
     "offer": "oferta",
+    "accepted": "aceite",
+    "archived": "arquivo",
 }
 
 _ACTIVE_SQL = """
     SELECT id, title, company, status, updated_at
     FROM applications
-    WHERE status NOT IN ('rejected', 'withdrawn')
+    WHERE status NOT IN (?, ?, ?, ?) -- count matches track.TERMINAL
     ORDER BY updated_at DESC, id
 """
 
@@ -43,7 +41,7 @@ def dossier_root() -> Path:
 def active_rows(path: str) -> list[dict]:
     # ponytail: track._conn is the same private opener merit serve uses.
     with contextlib.closing(track._conn(path)) as conn:
-        rows = conn.execute(_ACTIVE_SQL).fetchall()
+        rows = conn.execute(_ACTIVE_SQL, track.TERMINAL).fetchall()
     return [
         {
             "id": row["id"],

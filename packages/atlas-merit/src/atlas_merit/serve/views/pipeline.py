@@ -96,7 +96,7 @@ def _build_context(request: Request, db_path: str) -> dict:
             }
         )
 
-    closed_apps = [a for a in apps if a["status"] in ("rejected", "withdrawn")]
+    closed_apps = [a for a in apps if a["status"] in track.TERMINAL]
     columns.append(
         {
             "key": "closed",

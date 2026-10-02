@@ -17,7 +17,12 @@ STATUSES = (
     "offer",
     "rejected",
     "withdrawn",
+    "accepted",
+    "archived",
 )
+
+# Closed processes. offer stays active: an offer is still on the table.
+TERMINAL = ("rejected", "withdrawn", "accepted", "archived")
 
 LOG_FILES = ("thread", "notes")
 DIR_MODE = 0o700
@@ -301,10 +306,12 @@ def show_markdown(db_path: str, app_id: int) -> str:
 
 
 def count_active(db_path: str) -> int:
-    """Applications still in play (everything but rejected/withdrawn)."""
+    """Applications still in play (everything outside TERMINAL)."""
     with contextlib.closing(_conn(db_path)) as conn:
         row = conn.execute(
-            "SELECT COUNT(*) AS n FROM applications WHERE status NOT IN ('rejected', 'withdrawn')"
+            # Placeholder count matches TERMINAL. A fifth terminal needs another ?.
+            "SELECT COUNT(*) AS n FROM applications WHERE status NOT IN (?, ?, ?, ?)",
+            TERMINAL,
         ).fetchone()
         return row["n"]
 

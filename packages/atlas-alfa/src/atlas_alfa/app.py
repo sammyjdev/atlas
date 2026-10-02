@@ -122,4 +122,22 @@ def create_app(complete=draft.AUTO) -> FastAPI:
         template = "_draft.html" if _partial(request) else "processo.html"
         return _TEMPLATES.TemplateResponse(request, template, context)
 
+    @app.post("/processos/{app_id}/status")
+    async def change_status(request: Request, app_id: int):
+        path, found = _found(app_id)
+        if found is None:
+            return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
+        status = _form(await request.body()).get("status", "")
+        error = None
+        code = 200
+        try:
+            track.set_status(path, app_id, status)
+            found = ledger.row(path, app_id)
+        except track.TrackError:
+            error = "Status inválido."
+            code = 422
+        return _TEMPLATES.TemplateResponse(
+            request, "processo.html", _context(path, app_id, found, error=error), status_code=code
+        )
+
     return app

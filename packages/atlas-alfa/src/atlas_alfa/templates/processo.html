@@ -2,6 +2,10 @@
 {% block content %}
 <h1>{{ title or "-" }}</h1>
 <p>{{ company or "-" }} · {{ label }}</p>
+<form method="post" action="/processos/{{ app_id }}/status">
+  <button type="submit" name="status" value="accepted">Aceite</button>
+  <button type="submit" name="status" value="archived">Arquivo</button>
+</form>
 {% include "_thread.html" %}
 {% include "_draft.html" %}
 {% endblock %}
