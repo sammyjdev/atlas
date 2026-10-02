@@ -312,6 +312,83 @@ def test_gmail_candidates_keep_only_actionable_mail():
     assert {"tipo": "proposta", "assunto": "Proposta de trabalho"} in found
 
 
+_INTERVIEW = """---
+title: Acme AI Engineer
+nicho: interview
+slug: acme-ai-engineer
+cards:
+- q: How would you evaluate a RAG pipeline in production?
+  a: Names retrieval and answer metrics separately.
+---
+
+## Summary
+
+Hard questions for Acme.
+
+## Interview Q&A
+
+How would you evaluate a RAG pipeline in production?
+"""
+
+
+def _vault(tmp_path, monkeypatch):
+    root = tmp_path / "sage"
+    (root / "vault" / "interview").mkdir(parents=True)
+    (root / "vault" / "interview" / "acme-ai-engineer.md").write_text(_INTERVIEW, encoding="utf-8")
+    monkeypatch.setenv("ATLAS_VAULT", str(root))
+    return root
+
+
+def test_prep_shows_a_picked_interview(tmp_path, monkeypatch):
+    _dossier, app_id = _seed(tmp_path, monkeypatch)
+    _vault(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    assert client.post("/processos/99/prep", data={"entrevista": "x"}).status_code == 404
+    assert "Acme AI Engineer" in client.get(f"/processos/{app_id}").text
+
+    shown = client.post(
+        f"/processos/{app_id}/prep", data={"entrevista": "interview/acme-ai-engineer"}
+    )
+    assert shown.status_code == 200
+    assert "How would you evaluate a RAG pipeline in production?" in shown.text
+    assert "Front:" not in shown.text
+
+    for bad in ("interview/nope", "../../merit"):
+        missing = client.post(f"/processos/{app_id}/prep", data={"entrevista": bad})
+        assert missing.status_code == 422
+        assert "Hard questions for Acme" not in missing.text
+
+
+def test_prep_anki_is_text_and_writes_no_deck(tmp_path, monkeypatch):
+    _dossier, app_id = _seed(tmp_path, monkeypatch)
+    _vault(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    anki = client.post(
+        f"/processos/{app_id}/prep",
+        data={"entrevista": "interview/acme-ai-engineer", "anki": "1"},
+    )
+
+    assert anki.status_code == 200
+    assert "Front: How would you evaluate a RAG pipeline in production?" in anki.text
+    assert "Back: Names retrieval and answer metrics separately." in anki.text
+    assert list(tmp_path.rglob("*.apkg")) == []
+
+
+def test_prep_without_vault_claims_nothing(tmp_path, monkeypatch):
+    _dossier, app_id = _seed(tmp_path, monkeypatch)
+    monkeypatch.delenv("ATLAS_VAULT", raising=False)
+    client = TestClient(create_app())
+
+    response = client.post(
+        f"/processos/{app_id}/prep", data={"entrevista": "interview/acme-ai-engineer"}
+    )
+
+    assert "ATLAS_VAULT ausente." in response.text
+    assert "How would you evaluate" not in response.text
+
+
 def test_enviar_is_not_a_route(tmp_path, monkeypatch):
     _db(tmp_path, monkeypatch)
     client = TestClient(create_app())

@@ -79,6 +79,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "jinja2" },
     { name = "langgraph-checkpoint-sqlite" },
+    { name = "pyyaml" },
     { name = "uvicorn" },
 ]
 
@@ -89,6 +90,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "langgraph-checkpoint-sqlite", specifier = ">=2.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
 

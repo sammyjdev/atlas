@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 
-from atlas_alfa import draft, gmail, ledger
+from atlas_alfa import draft, gmail, ledger, prep
 
 HOST = "127.0.0.1"
 CSP = "default-src 'self'"
@@ -70,8 +70,11 @@ def create_app(complete=draft.AUTO) -> FastAPI:
         reminder_error: str | None = None,
         research_error: str | None = None,
         gmail_error: str | None = None,
+        prep_text: str | None = None,
+        prep_error: str | None = None,
     ) -> dict:
         research = ledger.entries(path, app_id, "pesquisa")
+        found_interviews = prep.interviews()
         return {
             "app_id": app_id,
             "title": found["title"],
@@ -91,6 +94,9 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             "research_error": research_error,
             "gmail_types": tuple(gmail.TYPES),
             "gmail_error": gmail_error,
+            "interviews": prep.titles(found_interviews) if found_interviews else [],
+            "prep_text": prep_text,
+            "prep_error": prep_error or (prep.NO_VAULT if found_interviews is None else None),
         }
 
     @app.get("/processos/{app_id}")
@@ -230,6 +236,30 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             "processo.html",
             _context(path, app_id, found, gmail_error=error),
             status_code=422 if error else 200,
+        )
+
+    @app.post("/processos/{app_id}/prep")
+    async def show_prep(request: Request, app_id: int):
+        path, found = _found(app_id)
+        if found is None:
+            return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
+        fields = _form(await request.body())
+        available = prep.interviews()
+        text = None
+        error = None
+        code = 200
+        if available is None:
+            error = prep.NO_VAULT
+        elif fields.get("entrevista", "") not in available:
+            error = "Entrevista nao encontrada."
+            code = 422
+        else:
+            text = prep.render(available[fields["entrevista"]], anki=fields.get("anki") == "1")
+        return _TEMPLATES.TemplateResponse(
+            request,
+            "processo.html",
+            _context(path, app_id, found, prep_text=text, prep_error=error),
+            status_code=code,
         )
 
     @app.post("/processos/{app_id}/lembrete")

@@ -43,6 +43,23 @@
     <button type="submit">Buscar</button>
   </form>
 </section>
+<section id="prep">
+  <h2>Prep</h2>
+  {% if prep_error %}<p>{{ prep_error }}</p>{% endif %}
+  {% if prep_text %}<pre>{{ prep_text }}</pre>{% endif %}
+  {% if interviews %}
+  <form method="post" action="/processos/{{ app_id }}/prep">
+    <label for="entrevista">Entrevista</label>
+    <select id="entrevista" name="entrevista">
+      {% for key, label in interviews %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+    </select>
+    <label><input type="checkbox" name="anki" value="1"> Formato Anki</label>
+    <button type="submit">Mostrar</button>
+  </form>
+  {% elif not prep_error %}
+  <p class="muted">Nenhuma entrevista gerada no vault.</p>
+  {% endif %}
+</section>
 <section id="gmail">
   <h2>Gmail</h2>
   {% if gmail_error %}<p>{{ gmail_error }}</p>{% endif %}
