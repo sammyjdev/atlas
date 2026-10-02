@@ -1,6 +1,7 @@
 """Local Tess shell. Imports Merit. Does not bind a public host."""
 
 import asyncio
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qsl
 
@@ -14,6 +15,7 @@ from atlas_alfa import draft, ledger
 
 HOST = "127.0.0.1"
 CSP = "default-src 'self'"
+REMINDER_KINDS = ("email", "teste")
 
 _TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 _HTMX = Path(atlas_merit.__file__).resolve().parent / "serve" / "static" / "htmx.min.js"
@@ -62,16 +64,23 @@ def create_app(complete=draft.AUTO) -> FastAPI:
         error: str | None = None,
         draft_text: str | None = None,
         draft_error: str | None = None,
+        recruiter_error: str | None = None,
+        reminder_error: str | None = None,
     ) -> dict:
         return {
             "app_id": app_id,
             "title": found["title"],
             "company": found["company"],
             "label": ledger.LABELS.get(found["status"], found["status"]),
-            "thread_entries": ledger.thread_entries(path, app_id),
+            "thread_entries": ledger.entries(path, app_id, "thread"),
+            "recruiter_entries": ledger.entries(path, app_id, "recrutador"),
+            "reminder_entries": ledger.entries(path, app_id, "lembrete"),
+            "reminder_kinds": REMINDER_KINDS,
             "error": error,
             "draft_text": draft_text,
             "draft_error": draft_error,
+            "recruiter_error": recruiter_error,
+            "reminder_error": reminder_error,
         }
 
     @app.get("/processos/{app_id}")
@@ -103,7 +112,7 @@ def create_app(complete=draft.AUTO) -> FastAPI:
         path, found = _found(app_id)
         if found is None:
             return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
-        body = "\n\n".join(text for _, text in ledger.thread_entries(path, app_id)).strip()
+        body = "\n\n".join(text for _, text in ledger.entries(path, app_id, "thread")).strip()
         draft_text = None
         draft_error = None
         if not body:
@@ -138,6 +147,54 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             code = 422
         return _TEMPLATES.TemplateResponse(
             request, "processo.html", _context(path, app_id, found, error=error), status_code=code
+        )
+
+    @app.post("/processos/{app_id}/recrutador")
+    async def recruiter(request: Request, app_id: int):
+        path, found = _found(app_id)
+        if found is None:
+            return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
+        fields = _form(await request.body())
+        nome = fields.get("nome", "").strip()
+        url = fields.get("url", "").strip()
+        error = None
+        if not nome or not url.startswith("https://"):
+            error = "Nome e URL https:// obrigatorios."
+        else:
+            entry = f"nome: {nome}\nurl: {url}"
+            track.log(path, app_id, entry, file="recrutador", dossier_root=ledger.dossier_root())
+        return _TEMPLATES.TemplateResponse(
+            request,
+            "processo.html",
+            _context(path, app_id, found, recruiter_error=error),
+            status_code=422 if error else 200,
+        )
+
+    @app.post("/processos/{app_id}/lembrete")
+    async def reminder(request: Request, app_id: int):
+        path, found = _found(app_id)
+        if found is None:
+            return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
+        fields = _form(await request.body())
+        kind = fields.get("kind", "")
+        quando = fields.get("quando", "").strip()
+        dados = fields.get("dados", "").strip()
+        error = None
+        if kind not in REMINDER_KINDS:
+            error = "Tipo invalido."
+        else:
+            try:
+                datetime.fromisoformat(quando)
+            except ValueError:
+                error = "Data obrigatoria."
+        if error is None:
+            entry = f"kind: {kind}\nquando: {quando}\ndados: {dados or '-'}"
+            track.log(path, app_id, entry, file="lembrete", dossier_root=ledger.dossier_root())
+        return _TEMPLATES.TemplateResponse(
+            request,
+            "processo.html",
+            _context(path, app_id, found, reminder_error=error),
+            status_code=422 if error else 200,
         )
 
     return app

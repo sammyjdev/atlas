@@ -59,9 +59,9 @@ def row(path: str, app_id: int):
         return conn.execute(track._SELECT_ROW_SQL, {"id": app_id}).fetchone()
 
 
-def thread_entries(path: str, app_id: int) -> list[tuple[str, str]]:
+def entries(path: str, app_id: int, file: str) -> list[tuple[str, str]]:
     return [
         (stamp, body)
         for stamp, source, body in track.entries(path, app_id)
-        if source == "thread"
+        if source == file
     ]

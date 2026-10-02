@@ -24,7 +24,7 @@ STATUSES = (
 # Closed processes. offer stays active: an offer is still on the table.
 TERMINAL = ("rejected", "withdrawn", "accepted", "archived")
 
-LOG_FILES = ("thread", "notes")
+LOG_FILES = ("thread", "notes", "recrutador", "lembrete")
 DIR_MODE = 0o700
 FILE_MODE = 0o600
 SHOW_ENTRIES = 3

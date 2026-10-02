@@ -8,4 +8,32 @@
 </form>
 {% include "_thread.html" %}
 {% include "_draft.html" %}
+<section id="recrutador">
+  <h2>Recrutador</h2>
+  {% for stamp, body in recruiter_entries %}<pre>{{ body }}</pre>{% endfor %}
+  {% if recruiter_error %}<p>{{ recruiter_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/recrutador">
+    <label for="nome">Nome</label>
+    <input id="nome" name="nome" required>
+    <label for="url">URL</label>
+    <input id="url" name="url" type="url" pattern="https://.*" required>
+    <button type="submit">Guardar recrutador</button>
+  </form>
+</section>
+<section id="lembrete">
+  <h2>Lembrete</h2>
+  {% for stamp, body in reminder_entries %}<pre>{{ body }}</pre>{% endfor %}
+  {% if reminder_error %}<p>{{ reminder_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/lembrete">
+    <label for="kind">Tipo</label>
+    <select id="kind" name="kind">
+      {% for kind in reminder_kinds %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
+    </select>
+    <label for="quando">Quando</label>
+    <input id="quando" name="quando" required>
+    <label for="dados">Dados</label>
+    <input id="dados" name="dados">
+    <button type="submit">Marcar</button>
+  </form>
+</section>
 {% endblock %}

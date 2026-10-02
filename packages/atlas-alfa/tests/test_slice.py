@@ -66,6 +66,69 @@ def test_status_moves_accepted_off_the_list(tmp_path, monkeypatch):
     assert "Backend" not in client.get("/").text
 
 
+def _seed(tmp_path, monkeypatch):
+    db_path = _db(tmp_path, monkeypatch)
+    root = tmp_path / "applications"
+    app_id = track.add(
+        db_path, "a.md", title="Backend", company="Acme", status="applied", dossier_root=root
+    )
+    return root / f"{app_id}-backend", app_id
+
+
+def test_recruiters_append_lines_and_need_https(tmp_path, monkeypatch):
+    dossier, app_id = _seed(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    assert client.post("/processos/99/recrutador", data={"nome": "Ana"}).status_code == 404
+
+    bad = client.post(
+        f"/processos/{app_id}/recrutador", data={"nome": "Ana", "url": "http://x.example/ana"}
+    )
+    assert bad.status_code == 422
+    assert not (dossier / "recrutador.md").exists()
+
+    client.post(
+        f"/processos/{app_id}/recrutador",
+        data={"nome": "Ana", "url": "https://www.linkedin.com/in/ana"},
+    )
+    client.post(
+        f"/processos/{app_id}/recrutador",
+        data={"nome": "Bruno", "url": "https://www.linkedin.com/in/bruno"},
+    )
+
+    page = client.get(f"/processos/{app_id}").text
+    assert "Ana" in page
+    assert "https://www.linkedin.com/in/ana" in page
+    assert "Bruno" in page
+
+
+def test_reminder_keeps_datetime_and_data(tmp_path, monkeypatch):
+    dossier, app_id = _seed(tmp_path, monkeypatch)
+    client = TestClient(create_app())
+
+    assert client.post("/processos/99/lembrete", data={"kind": "teste"}).status_code == 404
+
+    no_date = client.post(f"/processos/{app_id}/lembrete", data={"kind": "teste", "dados": "x"})
+    assert "Data obrigatoria." in no_date.text
+    assert not (dossier / "lembrete.md").exists()
+
+    ghost = client.post(
+        f"/processos/{app_id}/lembrete",
+        data={"kind": "ghosting", "quando": "2026-10-03T15:00:00Z", "dados": "x"},
+    )
+    assert ghost.status_code == 422
+    assert not (dossier / "lembrete.md").exists()
+
+    client.post(
+        f"/processos/{app_id}/lembrete",
+        data={"kind": "teste", "quando": "2026-10-03T15:00:00Z", "dados": "sala 2"},
+    )
+
+    page = client.get(f"/processos/{app_id}").text
+    assert "2026-10-03T15:00:00Z" in page
+    assert "sala 2" in page
+
+
 def test_enviar_is_not_a_route(tmp_path, monkeypatch):
     _db(tmp_path, monkeypatch)
     client = TestClient(create_app())
