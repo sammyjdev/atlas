@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title or "-" }}</h1>
+<p>{{ company or "-" }} · {{ label }}</p>
+{% include "_thread.html" %}
+{% include "_draft.html" %}
+{% endblock %}

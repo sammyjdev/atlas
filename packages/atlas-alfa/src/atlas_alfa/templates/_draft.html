@@ -1,0 +1,10 @@
+<section id="rascunho">
+  <h2>Rascunho</h2>
+  <p class="muted">Você envia. A Tess não posta no LinkedIn nem no e-mail.</p>
+  {% if draft_error %}<p>{{ draft_error }}</p>{% endif %}
+  {% if draft_text %}<pre>{{ draft_text }}</pre>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/rascunho"
+        hx-post="/processos/{{ app_id }}/rascunho" hx-target="#rascunho" hx-swap="outerHTML">
+    <button type="submit">Gerar rascunho</button>
+  </form>
+</section>
