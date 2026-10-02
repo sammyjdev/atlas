@@ -78,6 +78,7 @@ dependencies = [
     { name = "atlas-merit" },
     { name = "fastapi" },
     { name = "jinja2" },
+    { name = "langgraph-checkpoint-sqlite" },
     { name = "uvicorn" },
 ]
 
@@ -87,6 +88,7 @@ requires-dist = [
     { name = "atlas-merit", editable = "packages/atlas-merit" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "jinja2", specifier = ">=3.1" },
+    { name = "langgraph-checkpoint-sqlite", specifier = ">=2.0" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
 

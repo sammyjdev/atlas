@@ -184,6 +184,84 @@ def test_research_fetch_failure_invents_nothing(tmp_path, monkeypatch):
     assert not (dossier / "pesquisa.md").exists()
 
 
+_PROFILE = """skills:
+  - id: fastapi
+    name: FastAPI
+    status: strong
+  - id: pytorch
+    name: PyTorch
+    status: gap
+  - id: kafka
+    name: Kafka
+    status: gap
+aliases: {}
+"""
+
+
+def _fit_section(html: str) -> str:
+    import re
+
+    match = re.search(r'<section id="fit">(.*?)</section>', html, re.S)
+    assert match, "fit section missing"
+    return re.sub(r"<[^>]+>", " ", match.group(1))
+
+
+def test_fit_shows_stored_gap_verdict(tmp_path, monkeypatch):
+    db_path = _db(tmp_path, monkeypatch)
+    from atlas_merit.state import MeritState
+    from langgraph.checkpoint.sqlite import SqliteSaver
+    from langgraph.graph import END, START, StateGraph
+
+    verdicts = [
+        {"demand": "FastAPI", "verdict": "strong"},
+        {"demand": "Rust async runtimes", "verdict": "gap"},
+    ]
+    graph = StateGraph(MeritState)
+    graph.add_node("match", lambda _state: {"verdicts": verdicts})
+    graph.add_edge(START, "match")
+    graph.add_edge("match", END)
+    with SqliteSaver.from_conn_string(db_path) as saver:
+        graph.compile(checkpointer=saver).invoke({}, {"configurable": {"thread_id": "s-1"}})
+    app_id = track.add(
+        db_path, "a.md", title="Backend", company="Acme", status="applied",
+        session_id="s-1", dossier_root=tmp_path / "applications",
+    )
+
+    page = TestClient(create_app()).get(f"/processos/{app_id}").text
+
+    assert "Rust async runtimes" in _fit_section(page)
+
+
+def test_fit_falls_back_to_rank_gap_names_without_number(tmp_path, monkeypatch):
+    dossier, app_id = _seed(tmp_path, monkeypatch)
+    profile = tmp_path / "profile.yaml"
+    profile.write_text(_PROFILE, encoding="utf-8")
+    monkeypatch.setenv("MERIT_PROFILE", str(profile))
+    (dossier / "jd.md").write_text(
+        "# Backend\n\nSeen on Indeed. FastAPI, PyTorch and Kafka required.\n", encoding="utf-8"
+    )
+
+    page = TestClient(create_app()).get(f"/processos/{app_id}").text
+    fit = _fit_section(page)
+
+    assert "PyTorch" in fit
+    assert "Kafka" in fit
+    assert not any(ch.isdigit() for ch in fit)
+    assert "Indeed" not in page
+
+
+def test_fit_survives_a_broken_profile(tmp_path, monkeypatch):
+    _dossier, app_id = _seed(tmp_path, monkeypatch)
+    profile = tmp_path / "profile.yaml"
+    profile.write_text("skills: [unclosed\n", encoding="utf-8")
+    monkeypatch.setenv("MERIT_PROFILE", str(profile))
+
+    response = TestClient(create_app()).get(f"/processos/{app_id}")
+
+    assert response.status_code == 200
+    assert "Backend" in response.text
+
+
 def test_enviar_is_not_a_route(tmp_path, monkeypatch):
     _db(tmp_path, monkeypatch)
     client = TestClient(create_app())

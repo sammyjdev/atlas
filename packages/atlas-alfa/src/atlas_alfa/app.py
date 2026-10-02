@@ -81,6 +81,7 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             "reminder_entries": ledger.entries(path, app_id, "lembrete"),
             "reminder_kinds": REMINDER_KINDS,
             "research": research[-1][1] if research else None,
+            "fit": ledger.gaps(path, found),
             "error": error,
             "draft_text": draft_text,
             "draft_error": draft_error,

@@ -6,6 +6,17 @@
   <button type="submit" name="status" value="accepted">Aceite</button>
   <button type="submit" name="status" value="archived">Arquivo</button>
 </form>
+<section id="fit">
+  <h2>Fit</h2>
+  {% if fit is none %}
+  <p class="muted">Sem match nem perfil para comparar.</p>
+  {% elif fit[1] %}
+  <p class="muted">{{ "Lacunas do match" if fit[0] == "match" else "Lacunas pelo perfil" }}</p>
+  <ul>{% for name in fit[1] %}<li>{{ name }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="muted">Nenhuma lacuna encontrada.</p>
+  {% endif %}
+</section>
 {% include "_thread.html" %}
 {% include "_draft.html" %}
 <section id="recrutador">
