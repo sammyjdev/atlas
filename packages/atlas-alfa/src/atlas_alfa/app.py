@@ -1,12 +1,13 @@
 """Local Tess shell. Imports Merit. Does not bind a public host."""
 
 import asyncio
+import http.client
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qsl
 
 import atlas_merit
-from atlas_merit import track
+from atlas_merit import fetch, track
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
@@ -16,6 +17,7 @@ from atlas_alfa import draft, ledger
 HOST = "127.0.0.1"
 CSP = "default-src 'self'"
 REMINDER_KINDS = ("email", "teste")
+EXCERPT_CHARS = 600
 
 _TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 _HTMX = Path(atlas_merit.__file__).resolve().parent / "serve" / "static" / "htmx.min.js"
@@ -66,7 +68,9 @@ def create_app(complete=draft.AUTO) -> FastAPI:
         draft_error: str | None = None,
         recruiter_error: str | None = None,
         reminder_error: str | None = None,
+        research_error: str | None = None,
     ) -> dict:
+        research = ledger.entries(path, app_id, "pesquisa")
         return {
             "app_id": app_id,
             "title": found["title"],
@@ -76,11 +80,13 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             "recruiter_entries": ledger.entries(path, app_id, "recrutador"),
             "reminder_entries": ledger.entries(path, app_id, "lembrete"),
             "reminder_kinds": REMINDER_KINDS,
+            "research": research[-1][1] if research else None,
             "error": error,
             "draft_text": draft_text,
             "draft_error": draft_error,
             "recruiter_error": recruiter_error,
             "reminder_error": reminder_error,
+            "research_error": research_error,
         }
 
     @app.get("/processos/{app_id}")
@@ -168,6 +174,37 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             "processo.html",
             _context(path, app_id, found, recruiter_error=error),
             status_code=422 if error else 200,
+        )
+
+    @app.post("/processos/{app_id}/pesquisa")
+    async def research(request: Request, app_id: int):
+        path, found = _found(app_id)
+        if found is None:
+            return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
+        fields = _form(await request.body())
+        url = fields.get("url", "").strip()
+        rotulo = fields.get("rotulo", "").strip()
+        error = None
+        code = 200
+        if not rotulo or not url.startswith("https://"):
+            error = "Rotulo e URL https:// obrigatorios."
+            code = 422
+        else:
+            try:
+                text = await asyncio.to_thread(fetch.fetch_posting, url, 10)
+            except (OSError, ValueError, http.client.HTTPException):
+                text = ""
+            excerpt = text.strip()[:EXCERPT_CHARS]
+            if excerpt:
+                entry = f"rotulo: {rotulo}\nurl: {url}\n\n{excerpt}"
+                track.log(path, app_id, entry, file="pesquisa", dossier_root=ledger.dossier_root())
+            else:
+                error = "Pesquisa indisponivel."
+        return _TEMPLATES.TemplateResponse(
+            request,
+            "processo.html",
+            _context(path, app_id, found, research_error=error),
+            status_code=code,
         )
 
     @app.post("/processos/{app_id}/lembrete")

@@ -20,6 +20,18 @@
     <button type="submit">Guardar recrutador</button>
   </form>
 </section>
+<section id="pesquisa">
+  <h2>Pesquisa</h2>
+  {% if research %}<pre>{{ research }}</pre>{% endif %}
+  {% if research_error %}<p>{{ research_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/pesquisa">
+    <label for="pesquisa-url">URL</label>
+    <input id="pesquisa-url" name="url" type="url" pattern="https://.*" required>
+    <label for="rotulo">Rotulo</label>
+    <input id="rotulo" name="rotulo" required>
+    <button type="submit">Buscar</button>
+  </form>
+</section>
 <section id="lembrete">
   <h2>Lembrete</h2>
   {% for stamp, body in reminder_entries %}<pre>{{ body }}</pre>{% endfor %}

@@ -129,6 +129,61 @@ def test_reminder_keeps_datetime_and_data(tmp_path, monkeypatch):
     assert "sala 2" in page
 
 
+def test_research_needs_a_pasted_url(tmp_path, monkeypatch):
+    dossier, app_id = _seed(tmp_path, monkeypatch)
+    from atlas_merit import fetch
+
+    seen: list[str] = []
+
+    def fake_fetch(url: str, timeout: int = 20) -> str:
+        seen.append(url)
+        return "Acme builds payment rails for clinics."
+
+    monkeypatch.setattr(fetch, "fetch_posting", fake_fetch)
+    client = TestClient(create_app())
+
+    empty = client.get(f"/processos/{app_id}").text
+    assert "Quer que eu pesquise" not in empty
+    assert seen == []
+
+    assert client.post("/processos/99/pesquisa", data={"url": "https://x"}).status_code == 404
+
+    plain = client.post(
+        f"/processos/{app_id}/pesquisa", data={"url": "http://example.com", "rotulo": "cliente"}
+    )
+    assert plain.status_code == 422
+    assert seen == []
+
+    found = client.post(
+        f"/processos/{app_id}/pesquisa",
+        data={"url": "https://example.com/about", "rotulo": "cliente"},
+    )
+    assert found.status_code == 200
+    assert "cliente" in found.text
+    assert "Acme builds payment rails" in found.text
+    assert "Acme builds payment rails" in client.get(f"/processos/{app_id}").text
+    assert (dossier / "pesquisa.md").is_file()
+
+
+def test_research_fetch_failure_invents_nothing(tmp_path, monkeypatch):
+    dossier, app_id = _seed(tmp_path, monkeypatch)
+    from atlas_merit import fetch
+
+    def broken(url: str, timeout: int = 20) -> str:
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(fetch, "fetch_posting", broken)
+    client = TestClient(create_app())
+
+    response = client.post(
+        f"/processos/{app_id}/pesquisa",
+        data={"url": "https://example.com/about", "rotulo": "cliente"},
+    )
+
+    assert "Pesquisa indisponivel." in response.text
+    assert not (dossier / "pesquisa.md").exists()
+
+
 def test_enviar_is_not_a_route(tmp_path, monkeypatch):
     _db(tmp_path, monkeypatch)
     client = TestClient(create_app())
@@ -148,6 +203,10 @@ def test_paste_thread_updates_dossier_and_does_not_create(tmp_path, monkeypatch)
     app_id = track.add(
         db_path, "a.md", title="Backend", company="Acme", status="applied", dossier_root=root
     )
+    from atlas_merit import fetch
+
+    fetched: list[str] = []
+    monkeypatch.setattr(fetch, "fetch_posting", lambda url, timeout=20: fetched.append(url) or "")
     client = TestClient(create_app())
     before = _count(db_path)
 
@@ -165,7 +224,9 @@ def test_paste_thread_updates_dossier_and_does_not_create(tmp_path, monkeypatch)
     )
     assert pasted.status_code == 200
     assert "Oi, temos uma vaga" in pasted.text
-    assert "pesquis" not in pasted.text.lower()
+    assert "Quer que eu pesquise" not in pasted.text
+    assert not (root / f"{app_id}-backend" / "pesquisa.md").exists()
+    assert fetched == []
     assert _count(db_path) == before
     thread = (root / f"{app_id}-backend" / "thread.md").read_text(encoding="utf-8")
     assert "Oi, temos uma vaga https://example.com/about" in thread
