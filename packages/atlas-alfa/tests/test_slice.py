@@ -262,6 +262,56 @@ def test_fit_survives_a_broken_profile(tmp_path, monkeypatch):
     assert "Backend" in response.text
 
 
+def test_gmail_confirm_appends_typed_note_only(tmp_path, monkeypatch):
+    dossier, app_id = _seed(tmp_path, monkeypatch)
+    db_path = str(tmp_path / "merit.db")
+    client = TestClient(create_app())
+    before = _count(db_path)
+
+    assert client.post("/processos/99/gmail", data={"tipo": "proposta"}).status_code == 404
+
+    no_type = client.post(f"/processos/{app_id}/gmail", data={"assunto": "Oferta"})
+    assert no_type.status_code == 422
+    assert "Oferta" not in (dossier / "notes.md").read_text(encoding="utf-8")
+
+    ok = client.post(f"/processos/{app_id}/gmail", data={"tipo": "proposta", "assunto": "Oferta"})
+    assert ok.status_code == 200
+    notes = (dossier / "notes.md").read_text(encoding="utf-8")
+    assert "tipo: proposta" in notes
+    assert "Oferta" in notes
+    assert _count(db_path) == before
+    assert not (dossier / "lembrete.md").exists()
+
+
+def _mail(sender: str, subject: str) -> bytes:
+    from email.message import EmailMessage
+
+    msg = EmailMessage()
+    msg["From"] = sender
+    msg["Subject"] = subject
+    msg.set_content("body")
+    return msg.as_bytes()
+
+
+def test_gmail_candidates_keep_only_actionable_mail():
+    from atlas_alfa import gmail
+
+    raws = [
+        _mail("jobalerts-noreply@linkedin.com", "job alert: 30 new jobs"),
+        _mail("Ana <ana@acme.example>", "interview Thursday 15:00"),
+        _mail("news@acme.example", "Our latest newsletter"),
+        _mail("rh@acme.example", "Proposta de trabalho"),
+    ]
+
+    found = gmail.candidates(raws)
+
+    subjects = [c["assunto"] for c in found]
+    assert "interview Thursday 15:00" in subjects
+    assert not any("job alert" in s for s in subjects)
+    assert "Our latest newsletter" not in subjects
+    assert {"tipo": "proposta", "assunto": "Proposta de trabalho"} in found
+
+
 def test_enviar_is_not_a_route(tmp_path, monkeypatch):
     _db(tmp_path, monkeypatch)
     client = TestClient(create_app())

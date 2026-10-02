@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 
-from atlas_alfa import draft, ledger
+from atlas_alfa import draft, gmail, ledger
 
 HOST = "127.0.0.1"
 CSP = "default-src 'self'"
@@ -69,6 +69,7 @@ def create_app(complete=draft.AUTO) -> FastAPI:
         recruiter_error: str | None = None,
         reminder_error: str | None = None,
         research_error: str | None = None,
+        gmail_error: str | None = None,
     ) -> dict:
         research = ledger.entries(path, app_id, "pesquisa")
         return {
@@ -88,6 +89,8 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             "recruiter_error": recruiter_error,
             "reminder_error": reminder_error,
             "research_error": research_error,
+            "gmail_types": tuple(gmail.TYPES),
+            "gmail_error": gmail_error,
         }
 
     @app.get("/processos/{app_id}")
@@ -206,6 +209,27 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             "processo.html",
             _context(path, app_id, found, research_error=error),
             status_code=code,
+        )
+
+    @app.post("/processos/{app_id}/gmail")
+    async def confirm_mail(request: Request, app_id: int):
+        path, found = _found(app_id)
+        if found is None:
+            return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
+        fields = _form(await request.body())
+        tipo = fields.get("tipo", "")
+        assunto = fields.get("assunto", "").strip()
+        error = None
+        if tipo not in gmail.TYPES or not assunto:
+            error = "Tipo e assunto obrigatorios."
+        else:
+            entry = f"tipo: {tipo}\nassunto: {assunto}"
+            track.log(path, app_id, entry, file="notes", dossier_root=ledger.dossier_root())
+        return _TEMPLATES.TemplateResponse(
+            request,
+            "processo.html",
+            _context(path, app_id, found, gmail_error=error),
+            status_code=422 if error else 200,
         )
 
     @app.post("/processos/{app_id}/lembrete")

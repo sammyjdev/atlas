@@ -43,6 +43,19 @@
     <button type="submit">Buscar</button>
   </form>
 </section>
+<section id="gmail">
+  <h2>Gmail</h2>
+  {% if gmail_error %}<p>{{ gmail_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/gmail">
+    <label for="tipo">Tipo</label>
+    <select id="tipo" name="tipo">
+      {% for tipo in gmail_types %}<option value="{{ tipo }}">{{ tipo }}</option>{% endfor %}
+    </select>
+    <label for="assunto">Assunto</label>
+    <input id="assunto" name="assunto" required>
+    <button type="submit">Confirmar no dossiê</button>
+  </form>
+</section>
 <section id="lembrete">
   <h2>Lembrete</h2>
   {% for stamp, body in reminder_entries %}<pre>{{ body }}</pre>{% endfor %}
