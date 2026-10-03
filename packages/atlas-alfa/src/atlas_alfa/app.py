@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 
-from atlas_alfa import draft, gmail, ledger, prep
+from atlas_alfa import draft, gmail, ledger, pending, prep
 
 HOST = "127.0.0.1"
 CSP = "default-src 'self'"
@@ -52,7 +52,31 @@ def create_app(complete=draft.AUTO) -> FastAPI:
     @app.get("/")
     def index(request: Request):
         rows = ledger.active_rows(ledger.db_path())
-        return _TEMPLATES.TemplateResponse(request, "index.html", {"rows": rows})
+        try:
+            pending_count = len(pending.load())
+        except pending.PendingError:
+            pending_count = None
+        return _TEMPLATES.TemplateResponse(
+            request, "index.html", {"rows": rows, "pending_count": pending_count}
+        )
+
+    def _gmail_page(request: Request, error: str | None = None, status_code: int = 200):
+        try:
+            items = pending.ordered(pending.load())
+        except pending.PendingError:
+            items, error = [], pending.UNREADABLE
+        context = {
+            "items": items,
+            "rows": ledger.active_rows(ledger.db_path()),
+            "error": error,
+        }
+        return _TEMPLATES.TemplateResponse(
+            request, "gmail.html", context, status_code=status_code
+        )
+
+    @app.get("/gmail")
+    def gmail_page(request: Request):
+        return _gmail_page(request)
 
     def _found(app_id: int):
         path = ledger.db_path()

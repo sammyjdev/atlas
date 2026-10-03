@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Processos ativos</h1>
+{% if pending_count is none %}
+<p><a href="/gmail">Arquivo de pendentes ilegivel.</a></p>
+{% elif pending_count %}
+<p><a href="/gmail">E-mails pendentes: {{ pending_count }}</a></p>
+{% endif %}
 {% if rows %}
 <ul>
   {% for row in rows %}

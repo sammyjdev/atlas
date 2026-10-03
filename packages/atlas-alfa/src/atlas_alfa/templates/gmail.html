@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>E-mails pendentes</h1>
+<p class="muted">Confirmar grava uma nota no processo. A Tess não responde nem envia.</p>
+{% if error %}<p>{{ error }}</p>{% endif %}
+{% if items %}
+<ul>
+  {% for item in items %}
+  <li>
+    <p>
+      <strong>{{ item.tipo }}</strong>{% if item.importante %} · importante{% endif %}
+      · {% if item.link %}<a href="{{ item.link }}" rel="noreferrer">{{ item.assunto }}</a>{% else %}{{ item.assunto }}{% endif %}
+    </p>
+    <p class="muted">{{ item.remetente }} · {{ item.data }}</p>
+    {% if rows %}
+    <form method="post" action="/gmail/{{ item.id }}/confirmar">
+      <label for="processo-{{ item.id }}">Processo</label>
+      <select id="processo-{{ item.id }}" name="processo">
+        {% for row in rows %}<option value="{{ row.id }}">{{ row.title or "-" }} · {{ row.company or "-" }}</option>{% endfor %}
+      </select>
+      <button type="submit">Confirmar</button>
+    </form>
+    {% endif %}
+    <form method="post" action="/gmail/{{ item.id }}/descartar">
+      <button type="submit">Descartar</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% elif not error %}
+<p>Nenhum e-mail pendente.</p>
+{% endif %}
+{% endblock %}

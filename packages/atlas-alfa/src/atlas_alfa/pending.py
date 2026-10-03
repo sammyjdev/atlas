@@ -42,6 +42,13 @@ def load() -> list[dict]:
     return _read(_path())["pending"]
 
 
+def ordered(items: list[dict]) -> list[dict]:
+    """Important first, then tipo order, then newest."""
+    rank = list(gmail.TYPES)
+    newest = sorted(items, key=lambda item: item["data"], reverse=True)
+    return sorted(newest, key=lambda item: (not item["importante"], rank.index(item["tipo"])))
+
+
 @contextlib.contextmanager
 def _locked():
     """Yield the data; write it back only if the body did not raise."""

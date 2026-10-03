@@ -210,3 +210,102 @@ def test_gmail_query_prints_the_query(monkeypatch, capsys):
     code, out, _ = _run(monkeypatch, capsys, ["gmail-query"])
 
     assert code == 0 and out.strip() == gmail.QUERY
+
+
+def _item(msg_id, assunto, tipo, data="2026-10-02T02:40:58+00:00", importante=False):
+    return {
+        "id": msg_id,
+        "tipo": tipo,
+        "assunto": assunto,
+        "remetente": f"rh-{msg_id}@acme.example",
+        "data": data,
+        "importante": importante,
+        "link": "https://mail.google.com/mail/#all/thread-f:1",
+    }
+
+
+def _seed_pending(tmp_path, monkeypatch, items, seen=()):
+    path = _pending_file(tmp_path, monkeypatch)
+    path.write_text(json.dumps({"pending": items, "seen": list(seen)}), encoding="utf-8")
+    return path
+
+
+def _client():
+    from atlas_alfa.app import create_app
+    from fastapi.testclient import TestClient
+
+    return TestClient(create_app())
+
+
+def test_gmail_page_lists_items_and_only_active_processes(tmp_path, monkeypatch):
+    from atlas_merit import track
+
+    _seed_pending(
+        tmp_path,
+        monkeypatch,
+        [_item("h1", "Proposta Acme", "proposta"), _item("h2", "Feedback Beta", "feedback")],
+    )
+    db_path = str(tmp_path / "merit.db")
+    root = tmp_path / "applications"
+    track.add(db_path, "a.md", title="Backend", company="Acme", status="applied", dossier_root=root)
+    track.add(
+        db_path, "b.md", title="Recusa", company="Gamma", status="rejected", dossier_root=root
+    )
+
+    page = _client().get("/gmail")
+
+    assert page.status_code == 200
+    for text in ("Proposta Acme", "Feedback Beta", "proposta", "feedback", "Backend"):
+        assert text in page.text
+    assert "Recusa" not in page.text
+
+
+def test_gmail_page_empty_state(tmp_path, monkeypatch):
+    _pending_file(tmp_path, monkeypatch)
+    assert "Nenhum e-mail pendente." in _client().get("/gmail").text
+
+    _seed_pending(tmp_path, monkeypatch, [])
+    assert "Nenhum e-mail pendente." in _client().get("/gmail").text
+
+
+def test_index_shows_the_pending_count(tmp_path, monkeypatch):
+    _seed_pending(
+        tmp_path,
+        monkeypatch,
+        [_item("i1", "Proposta Acme", "proposta"), _item("i2", "Feedback Beta", "feedback")],
+    )
+
+    page = _client().get("/").text
+
+    assert "E-mails pendentes: 2" in page
+    assert 'href="/gmail"' in page
+
+
+def test_gmail_page_orders_important_then_type_then_newest(tmp_path, monkeypatch):
+    _seed_pending(
+        tmp_path,
+        monkeypatch,
+        [
+            _item("j1", "Assunto A", "feedback", "2026-09-20T10:00:00+00:00", importante=True),
+            _item("j2", "Assunto B", "proposta", "2026-10-02T10:00:00+00:00"),
+            _item("j3", "Assunto C", "horario", "2026-09-25T10:00:00+00:00", importante=True),
+            _item("j4", "Assunto D", "horario", "2026-09-30T10:00:00+00:00", importante=True),
+        ],
+    )
+
+    text = _client().get("/gmail").text
+
+    order = [text.index(f"Assunto {letter}") for letter in "DCAB"]
+    assert order == sorted(order)
+
+
+def test_gmail_page_reports_an_unreadable_file_without_rewriting(tmp_path, monkeypatch):
+    path = _pending_file(tmp_path, monkeypatch)
+    path.write_bytes(b"{broken")
+    client = _client()
+
+    page = client.get("/gmail")
+
+    assert "Arquivo de pendentes ilegivel." in page.text
+    assert client.get("/").status_code == 200
+    assert path.read_bytes() == b"{broken"
