@@ -453,3 +453,19 @@ def test_confirmed_or_discarded_keys_do_not_come_back(tmp_path, monkeypatch, cap
 
     assert code == 0 and out.strip() == "0"
     assert "Nenhum e-mail pendente." in client.get("/gmail").text
+
+
+def test_intake_doc_names_the_steps_and_the_limits():
+    import re
+    from pathlib import Path
+
+    doc = Path(__file__).resolve().parents[3] / "docs" / "gmail-intake.md"
+    text = doc.read_text(encoding="utf-8")
+
+    names = ("alfa gmail-query", "search_threads", "alfa gmail-candidatos")
+    steps = [text.index(name) for name in names]
+    assert steps == sorted(steps)
+    assert "Only `search_threads`" in text
+    assert "never sends" in text
+    assert re.findall(r"[\w.+-]+@[\w-]+\.[\w.]+", text) == []
+    assert "/Users/" not in text and "/home/" not in text
