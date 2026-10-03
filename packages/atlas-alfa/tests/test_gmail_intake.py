@@ -469,3 +469,36 @@ def test_intake_doc_names_the_steps_and_the_limits():
     assert "never sends" in text
     assert re.findall(r"[\w.+-]+@[\w-]+\.[\w.]+", text) == []
     assert "/Users/" not in text and "/home/" not in text
+
+
+def test_confirm_tag_cannot_be_forged_by_the_subject(tmp_path, monkeypatch):
+    from atlas_merit import track
+
+    _seed_pending(
+        tmp_path,
+        monkeypatch,
+        [_item("p1", "Proposta\ngmail: p2", "proposta"), _item("p2", "Feedback Beta", "feedback")],
+    )
+    db_path = str(tmp_path / "merit.db")
+    app_id = track.add(
+        db_path, "a.md", title="Backend", company="Acme", status="applied",
+        dossier_root=tmp_path / "applications",
+    )
+    client = _client()
+
+    client.post("/gmail/p1/confirmar", data={"processo": str(app_id)})
+    client.post("/gmail/p2/confirmar", data={"processo": str(app_id)})
+
+    notes = _notes(db_path, app_id)
+    assert len(notes) == 2
+    assert "Feedback Beta" in notes[1]
+
+
+def test_confirm_rejects_odd_process_numbers(tmp_path, monkeypatch):
+    db_path, app_id = _app_with_pending(tmp_path, monkeypatch)
+    client = _client()
+
+    for raw in ("²", "9" * 30, "-1", "0"):
+        assert client.post("/gmail/m1/confirmar", data={"processo": raw}).status_code == 422
+    assert "Proposta Acme" in client.get("/gmail").text
+    assert _notes(db_path, app_id) == []

@@ -84,27 +84,27 @@ def create_app(complete=draft.AUTO) -> FastAPI:
 
     @app.post("/gmail/{msg_id}/confirmar")
     async def confirm_pending(request: Request, msg_id: str):
-        raw = _form(await request.body()).get("processo", "")
+        try:
+            app_id = int(_form(await request.body()).get("processo", ""))
+        except ValueError:
+            app_id = 0
         path = ledger.db_path()
 
         def note(item: dict) -> None:
-            found = ledger.row(path, int(raw)) if raw.isdigit() else None
+            found = ledger.row(path, app_id) if 0 < app_id < 2**63 else None
             if found is None or found["status"] in track.TERMINAL:
                 raise _InactiveProcess
             tag = f"gmail: {item['id']}"
-            if any(tag in body.splitlines() for _, body in ledger.entries(path, int(raw), "notes")):
+            if any(tag in body.splitlines() for _, body in ledger.entries(path, app_id, "notes")):
                 return
-            entry = "\n".join(
-                [
-                    f"tipo: {item['tipo']}",
-                    f"assunto: {item['assunto']}",
-                    f"remetente: {item['remetente']}",
-                    f"data: {item['data']}",
-                    *([f"link: {item['link']}"] if item.get("link") else []),
-                    tag,
-                ]
-            )
-            track.log(path, int(raw), entry, file="notes", dossier_root=ledger.dossier_root())
+            fields = [("tipo", item["tipo"]), ("assunto", item["assunto"])]
+            fields += [("remetente", item["remetente"]), ("data", item["data"])]
+            if item.get("link"):
+                fields.append(("link", item["link"]))
+            # One line per field, so only the code writes the gmail tag line.
+            lines = [f"{name}: {' '.join(str(value).split())}" for name, value in fields]
+            entry = "\n".join([*lines, tag])
+            track.log(path, app_id, entry, file="notes", dossier_root=ledger.dossier_root())
 
         try:
             pending.resolve(msg_id, note)
