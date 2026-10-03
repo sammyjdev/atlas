@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from atlas_core.contracts import DemandSignal
+from atlas_core.exchange import Cursor
 from pydantic import ValidationError
 
 # Common words that carry no topical signal - excluded from keyword matching.
@@ -27,24 +28,37 @@ def load_jds(jds_dir: Path) -> list[str]:
 
 
 def newest_demand_signal(vault: Path) -> DemandSignal | None:
+    """Newest valid signal from the cursor on; the cursor only moves to a valid file.
+
+    Files are read one by one because LocalExchangeStore.read raises on a
+    malformed file, and a malformed file must be skipped, not fatal.
+    """
     folder = vault / "exchange" / "demand"
     if not folder.is_dir():
         return None
+    cursor = Cursor(vault / "state" / "exchange-cursor-demand")
+    since = cursor.get()
     newest = None
     for path in sorted(folder.glob("*.json")):
+        if since is not None and path.stem < since:
+            continue
         try:
-            newest = DemandSignal.model_validate_json(path.read_text(encoding="utf-8"))
+            signal = DemandSignal.model_validate_json(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, ValidationError, ValueError):
             continue
-    return newest
+        newest = (path.stem, signal)
+    if newest is None:
+        return None
+    if newest[0] != since:
+        cursor.set(newest[0])
+    return newest[1]
 
 
 def topic_source_texts(vault: Path, jds_dir: Path) -> list[str]:
     signal = newest_demand_signal(vault)
     if signal is None:
         return load_jds(jds_dir)
-    blob = " ".join(skill.name for skill in signal.skills).strip().lower()
-    return [blob] if blob else load_jds(jds_dir)
+    return [" ".join(skill.name for skill in signal.skills).strip().lower()]
 
 
 def _topic_keywords(topic: str) -> set[str]:

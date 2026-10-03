@@ -50,6 +50,49 @@ def test_topic_source_falls_back_when_dir_missing_empty_or_invalid(tmp_path: Pat
     assert newest_demand_signal(tmp_path) is None
 
 
+def test_topic_source_takes_newest_of_several_signals(tmp_path: Path) -> None:
+    store = LocalExchangeStore(tmp_path / "exchange")
+    store.publish("demand", _signal("rag"))
+    store.publish("demand", _signal("virtual threads"))
+    assert topic_source_texts(tmp_path, tmp_path / "jds") == ["virtual threads"]
+
+
+def test_valid_signal_without_skills_still_beats_jds(tmp_path: Path) -> None:
+    empty = _signal("x").model_copy(update={"skills": []})
+    LocalExchangeStore(tmp_path / "exchange").publish("demand", empty)
+    jds = tmp_path / "jds"
+    jds.mkdir()
+    (jds / "role.md").write_text("Java engineer")
+    assert topic_source_texts(tmp_path, jds) == [""]
+
+
+def test_invalid_file_after_valid_does_not_move_cursor(tmp_path: Path) -> None:
+    good = LocalExchangeStore(tmp_path / "exchange").publish("demand", _signal("rag"))
+    (tmp_path / "exchange" / "demand" / "99999999999999999999-bad.json").write_text("{")
+    assert topic_source_texts(tmp_path, tmp_path / "jds") == ["rag"]
+    assert Cursor(tmp_path / "state" / "exchange-cursor-demand").get() == good
+
+
+def test_consumed_signals_are_not_reread_and_stale_still_wins(
+    tmp_path: Path, monkeypatch
+) -> None:
+    store = LocalExchangeStore(tmp_path / "exchange")
+    store.publish("demand", _signal("rag"))
+    last = store.publish("demand", _signal("virtual threads"))
+    assert topic_source_texts(tmp_path, tmp_path / "jds") == ["virtual threads"]
+    read: list[str] = []
+    original = Path.read_text
+
+    def spy(self: Path, *args, **kwargs) -> str:
+        if self.suffix == ".json":
+            read.append(self.stem)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", spy)
+    assert topic_source_texts(tmp_path, tmp_path / "jds") == ["virtual threads"]
+    assert read == [last]
+
+
 def test_exchange_cursor_no_reread(tmp_path: Path) -> None:
     store = LocalExchangeStore(tmp_path / "exchange")
     first = store.publish("demand", _signal("rag"))
@@ -68,7 +111,8 @@ def test_refill_queue_prefers_demand_signal(tmp_path: Path, monkeypatch) -> None
     jds = tmp_path / "inputs" / "jds"
     jds.mkdir()
     (jds / "role.md").write_text("Looking for records and sealed classes")
-    LocalExchangeStore(tmp_path / "exchange").publish("demand", _signal("virtual threads"))
+    sig = LocalExchangeStore(tmp_path / "exchange").publish("demand", _signal("virtual threads"))
     state = State()
     main.refill_queue(state)
     assert state.queue[0]["topic"] == "virtual threads (JEP 444)"
+    assert Cursor(tmp_path / "state" / "exchange-cursor-demand").get() == sig
