@@ -330,3 +330,89 @@ def test_candidatos_keeps_0600_over_leftover_open_files(tmp_path, monkeypatch, c
     assert code == 0
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert stat.S_IMODE((tmp_path / f"{path.name}.lock").stat().st_mode) == 0o600
+
+
+def _app_with_pending(tmp_path, monkeypatch, status="applied"):
+    from atlas_merit import track
+
+    _seed_pending(tmp_path, monkeypatch, [_item("m1", "Proposta Acme", "proposta")])
+    db_path = str(tmp_path / "merit.db")
+    app_id = track.add(
+        db_path, "a.md", title="Backend", company="Acme", status=status,
+        dossier_root=tmp_path / "applications",
+    )
+    return db_path, app_id
+
+
+def _notes(db_path, app_id, file="notes"):
+    from atlas_merit import track
+
+    return [body for _, source, body in track.entries(db_path, app_id) if source == file]
+
+
+def _apps(db_path):
+    import contextlib
+
+    from atlas_merit import track
+
+    with contextlib.closing(track._conn(db_path)) as conn:
+        return conn.execute("SELECT COUNT(*) AS n FROM applications").fetchone()["n"]
+
+
+def test_confirm_writes_one_tagged_note_and_clears_the_item(tmp_path, monkeypatch):
+    db_path, app_id = _app_with_pending(tmp_path, monkeypatch)
+    client = _client()
+    before = _apps(db_path)
+
+    response = client.post("/gmail/m1/confirmar", data={"processo": str(app_id)})
+
+    assert response.status_code == 200
+    notes = _notes(db_path, app_id)
+    assert len(notes) == 1
+    for text in ("proposta", "Proposta Acme", "rh-m1@acme.example", "gmail: m1"):
+        assert text in notes[0]
+    assert _notes(db_path, app_id, "lembrete") == []
+    assert "Proposta Acme" not in client.get("/gmail").text
+    assert _apps(db_path) == before
+
+
+def test_confirm_needs_an_active_process(tmp_path, monkeypatch):
+    from atlas_merit import track
+
+    db_path, app_id = _app_with_pending(tmp_path, monkeypatch)
+    closed = track.add(
+        db_path, "b.md", title="Recusa", company="Gamma", status="rejected",
+        dossier_root=tmp_path / "applications",
+    )
+    client = _client()
+
+    for data in ({}, {"processo": "999"}, {"processo": "abc"}, {"processo": str(closed)}):
+        response = client.post("/gmail/m1/confirmar", data=data)
+        assert response.status_code == 422
+    assert "Proposta Acme" in client.get("/gmail").text
+    assert _notes(db_path, app_id) == [] and _notes(db_path, closed) == []
+
+
+def test_confirm_unknown_item_is_404(tmp_path, monkeypatch):
+    _db_path, app_id = _app_with_pending(tmp_path, monkeypatch)
+
+    response = _client().post("/gmail/nope/confirmar", data={"processo": str(app_id)})
+
+    assert response.status_code == 404
+
+
+def test_confirm_twice_writes_one_note(tmp_path, monkeypatch):
+    from atlas_merit import track
+
+    db_path, app_id = _app_with_pending(tmp_path, monkeypatch)
+    track.log(
+        db_path, app_id, "tipo: proposta\ngmail: m1", file="notes",
+        dossier_root=tmp_path / "applications",
+    )
+    client = _client()
+
+    response = client.post("/gmail/m1/confirmar", data={"processo": str(app_id)})
+
+    assert response.status_code == 200
+    assert len(_notes(db_path, app_id)) == 1
+    assert "Proposta Acme" not in client.get("/gmail").text

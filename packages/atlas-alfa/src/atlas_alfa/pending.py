@@ -16,6 +16,10 @@ class PendingError(Exception):
     pass
 
 
+class NotPending(Exception):
+    pass
+
+
 def _path() -> Path:
     return Path(ledger.db_path()).parent / FILE
 
@@ -68,6 +72,17 @@ def _locked():
         os.replace(tmp, path)
     finally:
         os.close(lock)
+
+
+def resolve(msg_id: str, act=None) -> None:
+    """Run act(item) under the lock, then drop the item. If act raises, the item stays."""
+    with _locked() as data:
+        item = next((item for item in data["pending"] if item["id"] == msg_id), None)
+        if item is None:
+            raise NotPending(msg_id)
+        if act is not None:
+            act(item)
+        data["pending"].remove(item)
 
 
 def merge(items: list[dict]) -> int:

@@ -32,6 +32,10 @@ def _partial(request: Request) -> bool:
     return request.headers.get("hx-request") == "true"
 
 
+class _InactiveProcess(Exception):
+    pass
+
+
 def create_app(complete=draft.AUTO) -> FastAPI:
     if complete is draft.AUTO:
         complete = draft.complete_from_env()
@@ -76,6 +80,40 @@ def create_app(complete=draft.AUTO) -> FastAPI:
 
     @app.get("/gmail")
     def gmail_page(request: Request):
+        return _gmail_page(request)
+
+    @app.post("/gmail/{msg_id}/confirmar")
+    async def confirm_pending(request: Request, msg_id: str):
+        raw = _form(await request.body()).get("processo", "")
+        path = ledger.db_path()
+
+        def note(item: dict) -> None:
+            found = ledger.row(path, int(raw)) if raw.isdigit() else None
+            if found is None or found["status"] in track.TERMINAL:
+                raise _InactiveProcess
+            tag = f"gmail: {item['id']}"
+            if any(tag in body.splitlines() for _, body in ledger.entries(path, int(raw), "notes")):
+                return
+            entry = "\n".join(
+                [
+                    f"tipo: {item['tipo']}",
+                    f"assunto: {item['assunto']}",
+                    f"remetente: {item['remetente']}",
+                    f"data: {item['data']}",
+                    *([f"link: {item['link']}"] if item.get("link") else []),
+                    tag,
+                ]
+            )
+            track.log(path, int(raw), entry, file="notes", dossier_root=ledger.dossier_root())
+
+        try:
+            pending.resolve(msg_id, note)
+        except pending.NotPending:
+            return _gmail_page(request, "E-mail nao esta pendente.", 404)
+        except _InactiveProcess:
+            return _gmail_page(request, "Escolha um processo ativo.", 422)
+        except pending.PendingError:
+            pass
         return _gmail_page(request)
 
     def _found(app_id: int):
