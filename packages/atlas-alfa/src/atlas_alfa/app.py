@@ -296,7 +296,7 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
         fields = _form(await request.body())
         tipo = fields.get("tipo", "")
-        assunto = fields.get("assunto", "").strip()
+        assunto = " ".join(fields.get("assunto", "").split())
         error = None
         if tipo not in gmail.TYPES or not assunto:
             error = "Tipo e assunto obrigatorios."

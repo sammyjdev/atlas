@@ -469,6 +469,7 @@ def test_intake_doc_names_the_steps_and_the_limits():
     assert "never sends" in text
     assert re.findall(r"[\w.+-]+@[\w-]+\.[\w.]+", text) == []
     assert "/Users/" not in text and "/home/" not in text
+    assert not re.search(r"\.local\b|\.ts\.net|\.lan\b|192\.168\.|\b10\.\d+\.", text)
 
 
 def test_confirm_tag_cannot_be_forged_by_the_subject(tmp_path, monkeypatch):
@@ -502,3 +503,17 @@ def test_confirm_rejects_odd_process_numbers(tmp_path, monkeypatch):
         assert client.post("/gmail/m1/confirmar", data={"processo": raw}).status_code == 422
     assert "Proposta Acme" in client.get("/gmail").text
     assert _notes(db_path, app_id) == []
+
+
+def test_manual_form_cannot_plant_a_gmail_tag(tmp_path, monkeypatch):
+    db_path, app_id = _app_with_pending(tmp_path, monkeypatch)
+    client = _client()
+
+    client.post(
+        f"/processos/{app_id}/gmail", data={"tipo": "proposta", "assunto": "x\ngmail: m1"}
+    )
+    client.post("/gmail/m1/confirmar", data={"processo": str(app_id)})
+
+    notes = _notes(db_path, app_id)
+    assert len(notes) == 2
+    assert "Proposta Acme" in notes[1]
