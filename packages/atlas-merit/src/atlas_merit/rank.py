@@ -204,6 +204,9 @@ def publish_rank_signal(profile: Profile, directory: Path, rows: list[Row]) -> s
     except subprocess.CalledProcessError as exc:
         sys.stderr.write((exc.stderr or str(exc)).rstrip() + "\n")
         return None
+    except (OSError, UnicodeDecodeError) as exc:
+        sys.stderr.write(f"demand signal not published: {exc}\n")
+        return None
 
 
 def render(rows: list[Row], skipped: list[str], top: int = DEFAULT_TOP) -> str:

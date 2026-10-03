@@ -1,5 +1,7 @@
+import subprocess
 from pathlib import Path
 
+import pytest
 from atlas_core.contracts import DemandSignal
 from typer.testing import CliRunner
 
@@ -55,6 +57,36 @@ def test_cli_rank_publishes_when_vault_git_is_a_file(tmp_path: Path, monkeypatch
     assert result.exit_code == 0, result.output
     files = list((vault / "exchange" / "demand").glob("*.json"))
     assert len(files) == 1
+
+
+@pytest.mark.parametrize(
+    ("target", "error"),
+    [
+        ("atlas_merit.rank.VaultGitStore._git",
+         subprocess.CalledProcessError(1, "git push", stderr="rejected")),
+        ("atlas_merit.rank.VaultGitStore._git", FileNotFoundError("git")),
+        ("atlas_merit.rank.VaultGitStore.publish", PermissionError("read-only vault")),
+        ("atlas_merit.rank.demand_signal_from_rank",
+         UnicodeDecodeError("utf-8", b"\xff", 0, 1, "bad byte")),
+    ],
+)
+def test_cli_rank_survives_publish_failure(
+    tmp_path: Path, monkeypatch, target: str, error: Exception
+) -> None:
+    vault = tmp_path / "vault"
+    (vault / ".git").mkdir(parents=True)
+    monkeypatch.setenv("ATLAS_VAULT", str(vault))
+
+    def boom(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(target, boom)
+    postings = tmp_path / "postings"
+    postings.mkdir()
+    (postings / "a.md").write_text("# Role\n\nFastAPI required.\n", encoding="utf-8")
+    result = runner.invoke(cli.app, ["rank", str(postings), "--profile", str(FIXTURE)])
+    assert result.exit_code == 0, result.output
+    assert "a.md" in result.output
 
 
 def test_cli_rank_skips_publish_without_atlas_vault(tmp_path: Path, monkeypatch) -> None:
