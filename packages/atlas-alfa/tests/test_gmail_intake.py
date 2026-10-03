@@ -1,3 +1,8 @@
+import io
+import json
+import stat
+import sys
+
 from atlas_alfa import gmail
 from atlas_merit import mail
 
@@ -104,3 +109,104 @@ def test_query_is_built_from_the_noise_senders():
     assert "in:inbox" in gmail.QUERY
     for sender in gmail.NOISE_SENDERS:
         assert f"-from:{sender}" in gmail.QUERY
+
+
+def _run(monkeypatch, capsys, args, stdin=""):
+    monkeypatch.setattr(sys, "argv", ["alfa", *args])
+    monkeypatch.setattr(sys, "stdin", io.StringIO(stdin))
+    from atlas_alfa.cli import main
+
+    code = 0
+    try:
+        main()
+    except SystemExit as exit_:
+        code = exit_.code
+    out = capsys.readouterr()
+    return code, out.out, out.err
+
+
+def _pending_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("MERIT_DB", str(tmp_path / "merit.db"))
+    return tmp_path / "gmail-pendentes.json"
+
+
+def _batch():
+    return [
+        _msg("f1", "Your Video Interview Awaits", labels=["INBOX", "IMPORTANT"]),
+        _msg("f2", "Proposta de trabalho", sender="ana@beta.example"),
+        _msg("f3", "Run failed: test - main", sender="notifications@github.com"),
+        "not a message",
+    ]
+
+
+def test_candidatos_lands_filtered_items_in_a_private_file(tmp_path, monkeypatch, capsys):
+    path = _pending_file(tmp_path, monkeypatch)
+
+    code, out, err = _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+
+    assert code == 0
+    assert out.strip() == "2"
+    assert "1" in err
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    pending = json.loads(path.read_text())["pending"]
+    assert sorted(item["id"] for item in pending) == ["f1", "f2"]
+
+
+def test_candidatos_is_quiet_on_stderr_without_skips(tmp_path, monkeypatch, capsys):
+    _pending_file(tmp_path, monkeypatch)
+
+    code, out, err = _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()[:2]))
+
+    assert code == 0 and out.strip() == "2" and err == ""
+
+
+def test_candidatos_twice_adds_nothing(tmp_path, monkeypatch, capsys):
+    _pending_file(tmp_path, monkeypatch)
+    _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+
+    code, out, _ = _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+
+    assert code == 0 and out.strip() == "0"
+
+
+def test_candidatos_keeps_one_item_per_key_with_the_newest_date(tmp_path, monkeypatch, capsys):
+    path = _pending_file(tmp_path, monkeypatch)
+    _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+    later = [_msg("g1", "your video interview awaits", date="2026-10-03T08:00:00Z")]
+
+    code, out, _ = _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(later))
+
+    pending = json.loads(path.read_text())["pending"]
+    assert code == 0 and out.strip() == "0"
+    assert len(pending) == 2
+    interview = next(item for item in pending if item["tipo"] == "horario")
+    assert interview["data"] == "2026-10-03T08:00:00+00:00"
+
+
+def test_candidatos_rejects_non_list_input_without_touching_the_file(
+    tmp_path, monkeypatch, capsys
+):
+    path = _pending_file(tmp_path, monkeypatch)
+    _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+    before = path.read_bytes()
+
+    for bad in ['{"id": "x"}', "not json"]:
+        code, _, err = _run(monkeypatch, capsys, ["gmail-candidatos"], bad)
+        assert code == 2 and "uso:" in err
+    assert path.read_bytes() == before
+
+
+def test_candidatos_refuses_an_unreadable_pending_file(tmp_path, monkeypatch, capsys):
+    path = _pending_file(tmp_path, monkeypatch)
+
+    for broken in [b"{broken", b"[]"]:
+        path.write_bytes(broken)
+        code, _, err = _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+        assert code == 2 and "pendentes ilegivel" in err
+        assert path.read_bytes() == broken
+
+
+def test_gmail_query_prints_the_query(monkeypatch, capsys):
+    code, out, _ = _run(monkeypatch, capsys, ["gmail-query"])
+
+    assert code == 0 and out.strip() == gmail.QUERY
