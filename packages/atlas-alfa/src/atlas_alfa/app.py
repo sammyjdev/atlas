@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 
-from atlas_alfa import draft, gmail, ledger, prep
+from atlas_alfa import draft, gmail, ledger, pending, prep
 
 HOST = "127.0.0.1"
 CSP = "default-src 'self'"
@@ -30,6 +30,10 @@ def _form(body: bytes) -> dict[str, str]:
 
 def _partial(request: Request) -> bool:
     return request.headers.get("hx-request") == "true"
+
+
+class _InactiveProcess(Exception):
+    pass
 
 
 def create_app(complete=draft.AUTO) -> FastAPI:
@@ -52,7 +56,75 @@ def create_app(complete=draft.AUTO) -> FastAPI:
     @app.get("/")
     def index(request: Request):
         rows = ledger.active_rows(ledger.db_path())
-        return _TEMPLATES.TemplateResponse(request, "index.html", {"rows": rows})
+        try:
+            pending_count = len(pending.load())
+        except pending.PendingError:
+            pending_count = None
+        return _TEMPLATES.TemplateResponse(
+            request, "index.html", {"rows": rows, "pending_count": pending_count}
+        )
+
+    def _gmail_page(request: Request, error: str | None = None, status_code: int = 200):
+        try:
+            items = pending.ordered(pending.load())
+        except pending.PendingError:
+            items, error = [], pending.UNREADABLE
+        context = {
+            "items": items,
+            "rows": ledger.active_rows(ledger.db_path()),
+            "error": error,
+        }
+        return _TEMPLATES.TemplateResponse(
+            request, "gmail.html", context, status_code=status_code
+        )
+
+    @app.get("/gmail")
+    def gmail_page(request: Request):
+        return _gmail_page(request)
+
+    @app.post("/gmail/{msg_id}/confirmar")
+    async def confirm_pending(request: Request, msg_id: str):
+        try:
+            app_id = int(_form(await request.body()).get("processo", ""))
+        except ValueError:
+            app_id = 0
+        path = ledger.db_path()
+
+        def note(item: dict) -> None:
+            found = ledger.row(path, app_id) if 0 < app_id < 2**63 else None
+            if found is None or found["status"] in track.TERMINAL:
+                raise _InactiveProcess
+            tag = f"gmail: {item['id']}"
+            if any(tag in body.splitlines() for _, body in ledger.entries(path, app_id, "notes")):
+                return
+            fields = [("tipo", item["tipo"]), ("assunto", item["assunto"])]
+            fields += [("remetente", item["remetente"]), ("data", item["data"])]
+            if item.get("link"):
+                fields.append(("link", item["link"]))
+            # One line per field, so only the code writes the gmail tag line.
+            lines = [f"{name}: {' '.join(str(value).split())}" for name, value in fields]
+            entry = "\n".join([*lines, tag])
+            track.log(path, app_id, entry, file="notes", dossier_root=ledger.dossier_root())
+
+        try:
+            pending.resolve(msg_id, note)
+        except pending.NotPending:
+            return _gmail_page(request, "E-mail nao esta pendente.", 404)
+        except _InactiveProcess:
+            return _gmail_page(request, "Escolha um processo ativo.", 422)
+        except pending.PendingError:
+            pass
+        return _gmail_page(request)
+
+    @app.post("/gmail/{msg_id}/descartar")
+    def discard_pending(request: Request, msg_id: str):
+        try:
+            pending.resolve(msg_id)
+        except pending.NotPending:
+            return _gmail_page(request, "E-mail nao esta pendente.", 404)
+        except pending.PendingError:
+            pass
+        return _gmail_page(request)
 
     def _found(app_id: int):
         path = ledger.db_path()
@@ -224,7 +296,7 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             return _TEMPLATES.TemplateResponse(request, "missing.html", {}, status_code=404)
         fields = _form(await request.body())
         tipo = fields.get("tipo", "")
-        assunto = fields.get("assunto", "").strip()
+        assunto = " ".join(fields.get("assunto", "").split())
         error = None
         if tipo not in gmail.TYPES or not assunto:
             error = "Tipo e assunto obrigatorios."
