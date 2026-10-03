@@ -1,0 +1,19 @@
+<section id="thread">
+  {% if thread_entries %}
+  {% for stamp, body in thread_entries %}
+  <article>
+    <p class="muted">{{ stamp }}</p>
+    <pre>{{ body }}</pre>
+  </article>
+  {% endfor %}
+  {% else %}
+  <p class="muted">Sem thread neste processo.</p>
+  {% endif %}
+  {% if error %}<p>{{ error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/thread"
+        hx-post="/processos/{{ app_id }}/thread" hx-target="#thread" hx-swap="outerHTML">
+    <label for="text">Colar thread</label>
+    <textarea id="text" name="text" required></textarea>
+    <button type="submit">Guardar no dossiê</button>
+  </form>
+</section>

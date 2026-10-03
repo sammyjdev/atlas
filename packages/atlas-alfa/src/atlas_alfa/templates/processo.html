@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ title or "-" }}</h1>
+<p>{{ company or "-" }} · {{ label }}</p>
+<form method="post" action="/processos/{{ app_id }}/status">
+  <button type="submit" name="status" value="accepted">Aceite</button>
+  <button type="submit" name="status" value="archived">Arquivo</button>
+</form>
+<section id="fit">
+  <h2>Fit</h2>
+  {% if fit is none %}
+  <p class="muted">Sem match nem perfil para comparar.</p>
+  {% elif fit[1] %}
+  <p class="muted">{{ "Lacunas do match" if fit[0] == "match" else "Lacunas pelo perfil" }}</p>
+  <ul>{% for name in fit[1] %}<li>{{ name }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="muted">Nenhuma lacuna encontrada.</p>
+  {% endif %}
+</section>
+{% include "_thread.html" %}
+{% include "_draft.html" %}
+<section id="recrutador">
+  <h2>Recrutador</h2>
+  {% for stamp, body in recruiter_entries %}<pre>{{ body }}</pre>{% endfor %}
+  {% if recruiter_error %}<p>{{ recruiter_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/recrutador">
+    <label for="nome">Nome</label>
+    <input id="nome" name="nome" required>
+    <label for="url">URL</label>
+    <input id="url" name="url" type="url" pattern="https://.*" required>
+    <button type="submit">Guardar recrutador</button>
+  </form>
+</section>
+<section id="pesquisa">
+  <h2>Pesquisa</h2>
+  {% if research %}<pre>{{ research }}</pre>{% endif %}
+  {% if research_error %}<p>{{ research_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/pesquisa">
+    <label for="pesquisa-url">URL</label>
+    <input id="pesquisa-url" name="url" type="url" pattern="https://.*" required>
+    <label for="rotulo">Rotulo</label>
+    <input id="rotulo" name="rotulo" required>
+    <button type="submit">Buscar</button>
+  </form>
+</section>
+<section id="prep">
+  <h2>Prep</h2>
+  {% if prep_error %}<p>{{ prep_error }}</p>{% endif %}
+  {% if prep_text %}<pre>{{ prep_text }}</pre>{% endif %}
+  {% if interviews %}
+  <form method="post" action="/processos/{{ app_id }}/prep">
+    <label for="entrevista">Entrevista</label>
+    <select id="entrevista" name="entrevista">
+      {% for key, label in interviews %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+    </select>
+    <label><input type="checkbox" name="anki" value="1"> Formato Anki</label>
+    <button type="submit">Mostrar</button>
+  </form>
+  {% elif not prep_error %}
+  <p class="muted">Nenhuma entrevista gerada no vault.</p>
+  {% endif %}
+</section>
+<section id="gmail">
+  <h2>Gmail</h2>
+  {% if gmail_error %}<p>{{ gmail_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/gmail">
+    <label for="tipo">Tipo</label>
+    <select id="tipo" name="tipo">
+      {% for tipo in gmail_types %}<option value="{{ tipo }}">{{ tipo }}</option>{% endfor %}
+    </select>
+    <label for="assunto">Assunto</label>
+    <input id="assunto" name="assunto" required>
+    <button type="submit">Confirmar no dossiê</button>
+  </form>
+</section>
+<section id="lembrete">
+  <h2>Lembrete</h2>
+  {% for stamp, body in reminder_entries %}<pre>{{ body }}</pre>{% endfor %}
+  {% if reminder_error %}<p>{{ reminder_error }}</p>{% endif %}
+  <form method="post" action="/processos/{{ app_id }}/lembrete">
+    <label for="kind">Tipo</label>
+    <select id="kind" name="kind">
+      {% for kind in reminder_kinds %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
+    </select>
+    <label for="quando">Quando</label>
+    <input id="quando" name="quando" required>
+    <label for="dados">Dados</label>
+    <input id="dados" name="dados">
+    <button type="submit">Marcar</button>
+  </form>
+</section>
+{% endblock %}

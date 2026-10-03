@@ -264,7 +264,11 @@ def test_count_active_excludes_terminal_statuses(tmp_path):
     track.add(db, "s1", title="A", status="queued")
     track.add(db, "s2", title="B", status="interview")
     rejected = track.add(db, "s3", title="C", status="applied")
+    accepted = track.add(db, "s4", title="D", status="applied")
+    archived = track.add(db, "s5", title="E", status="applied")
     track.set_status(db, rejected, "rejected")
+    track.set_status(db, accepted, "accepted")
+    track.set_status(db, archived, "archived")
 
     assert track.count_active(db) == 2
 

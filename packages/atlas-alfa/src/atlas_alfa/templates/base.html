@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tess</title>
+<script src="/static/htmx.min.js" defer></script>
+<style>
+  body { font: 16px/1.45 system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+  a { color: inherit; }
+  textarea { width: 100%; min-height: 8rem; }
+  .muted { color: #555; }
+  pre { white-space: pre-wrap; }
+  li { margin: 0.4rem 0; }
+</style>
+</head>
+<body>
+<header><a href="/">Tess</a></header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

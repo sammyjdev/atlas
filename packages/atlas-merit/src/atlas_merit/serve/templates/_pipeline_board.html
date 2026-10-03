@@ -6,7 +6,7 @@
 {% else %}
   <div class="pipeline-kanban">
     {% for col in columns %}
-      {# `encerradas` collapses rejected+withdrawn, so its key is not a status
+      {# `encerradas` collapses track.TERMINAL, so its key is not a status
          set_status would accept - it stays out of the drop contract. #}
       <div class="pipeline-column"{% if col.key in all_statuses %} data-drop-status="{{ col.key }}"{% endif %}>
         <div class="column-header">
