@@ -1,0 +1,24 @@
+[project]
+name = "atlas-alfa"
+version = "0.1.0"
+description = "Alfa: Tess interface shell over the Merit ledger"
+requires-python = ">=3.11"
+dependencies = [
+    "atlas-kit",
+    "atlas-merit",
+    "langgraph-checkpoint-sqlite>=2.0",
+    "pyyaml>=6.0",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "jinja2>=3.1",
+]
+
+[project.scripts]
+alfa = "atlas_alfa.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlas_alfa"]

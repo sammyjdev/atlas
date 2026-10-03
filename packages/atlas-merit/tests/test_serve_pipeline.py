@@ -35,12 +35,18 @@ def test_closed_statuses_collapse_into_encerradas(client, db_path):
     track.add(db_path, "http://example.com/1", title="App Found", status="found")
     track.add(db_path, "http://example.com/2", title="App Rejected", status="rejected")
     track.add(db_path, "http://example.com/3", title="App Withdrawn", status="withdrawn")
+    track.add(db_path, "http://example.com/4", title="App Accepted", status="accepted")
+    track.add(db_path, "http://example.com/5", title="App Archived", status="archived")
 
     response = client.get("/pipeline")
     assert response.status_code == 200
     assert response.text.count("encerradas") == 1
     assert "App Rejected" in response.text
     assert "App Withdrawn" in response.text
+    assert "App Accepted" in response.text
+    assert "App Archived" in response.text
+    assert "aceite (" not in response.text
+    assert "arquivo (" not in response.text
 
 
 def test_move_updates_status_and_returns_board(client, db_path):
@@ -137,7 +143,7 @@ def test_cards_and_columns_carry_the_drag_and_drop_contract(client, db_path):
 
 def test_every_drop_target_is_a_real_status(client, db_path):
     """The board advertises drop targets by column key, but `encerradas`
-    collapses rejected+withdrawn under the key `closed`, which set_status
+    collapses track.TERMINAL under the key `closed`, which set_status
     would refuse. A target the drop handler cannot honour must not exist."""
     import re
 

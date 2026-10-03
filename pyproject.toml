@@ -9,6 +9,7 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 atlas-kit = { workspace = true }
+atlas-merit = { workspace = true }
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.5", "import-linter>=2.0", "httpx>=0.27"]
@@ -25,16 +26,22 @@ addopts = "-q --import-mode=importlib -m 'not provider'"
 markers = ["provider: opt-in tests that hit a real LLM provider"]
 
 [tool.importlinter]
-root_packages = ["atlas_core", "atlas_merit", "atlas_sage"]
+root_packages = ["atlas_core", "atlas_merit", "atlas_sage", "atlas_alfa"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "core imports no module"
 type = "forbidden"
 source_modules = ["atlas_core"]
-forbidden_modules = ["atlas_merit", "atlas_orbit", "atlas_sage"]
+forbidden_modules = ["atlas_merit", "atlas_orbit", "atlas_sage", "atlas_alfa"]
 
 [[tool.importlinter.contracts]]
 name = "merit and sage are independent"
 type = "independence"
 modules = ["atlas_merit", "atlas_sage"]
+
+[[tool.importlinter.contracts]]
+name = "alfa imports merit, not sage"
+type = "forbidden"
+source_modules = ["atlas_alfa"]
+forbidden_modules = ["atlas_sage", "atlas_orbit"]

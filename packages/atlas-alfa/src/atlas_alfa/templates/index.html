@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Processos ativos</h1>
+{% if rows %}
+<ul>
+  {% for row in rows %}
+  <li>
+    <a href="/processos/{{ row.id }}">{{ row.title or "-" }}</a>
+    · {{ row.company or "-" }}
+    · {{ row.label }}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>Nenhum processo ativo.</p>
+{% endif %}
+{% endblock %}
