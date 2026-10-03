@@ -64,13 +64,14 @@ def _parse(item) -> dict | None:
         if not all(isinstance(v, str) for v in (msg_id, sender, date)):
             return None
         when = datetime.fromisoformat(date)
-    except (KeyError, TypeError, ValueError):
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=UTC)
+        when = when.astimezone(UTC)
+    except (KeyError, TypeError, ValueError, OverflowError):
         return None
     address = email.utils.parseaddr(sender)[1].lower()
     if not _ID.fullmatch(msg_id) or not address:
         return None
-    if when.tzinfo is None:
-        when = when.replace(tzinfo=UTC)
     labels = item.get("labelIds")
     labels = labels if isinstance(labels, list) else []
     link = item.get("viewUrl")
@@ -79,7 +80,7 @@ def _parse(item) -> dict | None:
         "id": msg_id,
         "assunto": subject.strip() if isinstance(subject, str) else "",
         "remetente": address,
-        "data": when.astimezone(UTC).isoformat(),
+        "data": when.isoformat(),
         "importante": "IMPORTANT" in labels,
         "sent": "SENT" in labels,
         "link": link if isinstance(link, str) and link.startswith(GMAIL_LINK) else None,

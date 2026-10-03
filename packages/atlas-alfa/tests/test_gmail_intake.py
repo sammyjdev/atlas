@@ -27,7 +27,7 @@ def test_from_mcp_drops_noise_senders_and_untyped_subjects():
     items = [
         _msg("a1", "Run failed: test - main", sender="notifications@github.com"),
         _msg("a2", "Coding Challenge #139", sender="newsletters-noreply@linkedin.com"),
-        _msg("a3", "job alert: 30 new jobs", sender=mail.JOB_ALERT_SENDERS[0]),
+        _msg("a3", "Your Video Interview Awaits", sender=mail.JOB_ALERT_SENDERS[0]),
         _msg("a4", "Our latest newsletter"),
         _msg("a5", "Re: Interview Thursday", labels=["SENT"]),
     ]
@@ -309,3 +309,24 @@ def test_gmail_page_reports_an_unreadable_file_without_rewriting(tmp_path, monke
     assert "Arquivo de pendentes ilegivel." in page.text
     assert client.get("/").status_code == 200
     assert path.read_bytes() == b"{broken"
+
+
+def test_from_mcp_skips_a_date_that_overflows_utc():
+    items = [_msg("k1", "Teste tecnico", date="0001-01-01T00:00:00+01:00"), _msg("k2", "Teste")]
+
+    found, skipped = gmail.from_mcp(items)
+
+    assert [item["id"] for item in found] == ["k2"] and skipped == 1
+
+
+def test_candidatos_keeps_0600_over_leftover_open_files(tmp_path, monkeypatch, capsys):
+    path = _pending_file(tmp_path, monkeypatch)
+    for leftover in (f"{path.name}.tmp", f"{path.name}.lock"):
+        (tmp_path / leftover).write_text("")
+        (tmp_path / leftover).chmod(0o644)
+
+    code, _, _ = _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+
+    assert code == 0
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert stat.S_IMODE((tmp_path / f"{path.name}.lock").stat().st_mode) == 0o600

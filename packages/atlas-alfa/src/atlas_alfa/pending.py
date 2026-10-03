@@ -53,13 +53,16 @@ def ordered(items: list[dict]) -> list[dict]:
 def _locked():
     """Yield the data; write it back only if the body did not raise."""
     path = _path()
+    # The open mode only applies on creation; fchmod covers leftover files.
     lock = os.open(f"{path}.lock", os.O_CREAT | os.O_RDWR, 0o600)
     try:
+        os.fchmod(lock, 0o600)
         fcntl.flock(lock, fcntl.LOCK_EX)
         data = _read(path)
         yield data
         tmp = path.with_name(f"{path.name}.tmp")
         fd = os.open(tmp, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+        os.fchmod(fd, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as out:
             json.dump(data, out, ensure_ascii=False, indent=1)
         os.replace(tmp, path)
