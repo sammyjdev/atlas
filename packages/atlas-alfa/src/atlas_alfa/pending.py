@@ -83,14 +83,19 @@ def resolve(msg_id: str, act=None) -> None:
         if act is not None:
             act(item)
         data["pending"].remove(item)
+        if gmail.key(item) not in data["seen"]:
+            data["seen"].append(gmail.key(item))
 
 
 def merge(items: list[dict]) -> int:
     """Add new keys, refresh a known key when the copy is newer. Returns added count."""
     added = 0
     with _locked() as data:
+        seen = set(data["seen"])
         by_key = {gmail.key(item): n for n, item in enumerate(data["pending"])}
         for item in items:
+            if gmail.key(item) in seen:
+                continue
             n = by_key.get(gmail.key(item))
             if n is None:
                 by_key[gmail.key(item)] = len(data["pending"])

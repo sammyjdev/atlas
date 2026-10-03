@@ -116,6 +116,16 @@ def create_app(complete=draft.AUTO) -> FastAPI:
             pass
         return _gmail_page(request)
 
+    @app.post("/gmail/{msg_id}/descartar")
+    def discard_pending(request: Request, msg_id: str):
+        try:
+            pending.resolve(msg_id)
+        except pending.NotPending:
+            return _gmail_page(request, "E-mail nao esta pendente.", 404)
+        except pending.PendingError:
+            pass
+        return _gmail_page(request)
+
     def _found(app_id: int):
         path = ledger.db_path()
         found = ledger.row(path, app_id)

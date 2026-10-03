@@ -416,3 +416,40 @@ def test_confirm_twice_writes_one_note(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert len(_notes(db_path, app_id)) == 1
     assert "Proposta Acme" not in client.get("/gmail").text
+
+
+def test_discard_drops_the_item_without_a_note(tmp_path, monkeypatch):
+    db_path, app_id = _app_with_pending(tmp_path, monkeypatch)
+    client = _client()
+
+    assert client.post("/gmail/nope/descartar").status_code == 404
+    response = client.post("/gmail/m1/descartar")
+
+    assert response.status_code == 200
+    assert "Proposta Acme" not in client.get("/gmail").text
+    assert _notes(db_path, app_id) == []
+
+
+def test_confirmed_or_discarded_keys_do_not_come_back(tmp_path, monkeypatch, capsys):
+    from atlas_merit import track
+
+    _pending_file(tmp_path, monkeypatch)
+    app_id = track.add(
+        str(tmp_path / "merit.db"), "a.md", title="Backend", company="Acme", status="applied",
+        dossier_root=tmp_path / "applications",
+    )
+    _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(_batch()))
+    client = _client()
+    client.post("/gmail/f1/confirmar", data={"processo": str(app_id)})
+    client.post("/gmail/f2/descartar")
+    again = [
+        _msg("f1", "Your Video Interview Awaits"),
+        _msg("n1", "your video interview awaits", date="2026-10-04T08:00:00Z"),
+        _msg("f2", "Proposta de trabalho", sender="ana@beta.example"),
+        _msg("n2", "Proposta de trabalho", sender="Ana <ANA@beta.example>"),
+    ]
+
+    code, out, _ = _run(monkeypatch, capsys, ["gmail-candidatos"], json.dumps(again))
+
+    assert code == 0 and out.strip() == "0"
+    assert "Nenhum e-mail pendente." in client.get("/gmail").text
