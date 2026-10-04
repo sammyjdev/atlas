@@ -70,8 +70,9 @@ def gaps(path: str, found) -> tuple[str, list[str]] | None:
         if verdicts:
             return "match", [v["demand"] for v in verdicts if v["verdict"] == "gap"]
     profile = Path(os.environ.get("MERIT_PROFILE", atlas_home() / "profile.yaml"))
-    jd = Path(found["dossier_dir"] or "") / "jd.md"
-    if not found["dossier_dir"] or not profile.is_file() or not jd.is_file():
+    dossier = track.dossier_of(path, found["dossier_dir"])
+    jd = dossier / "jd.md" if dossier else None
+    if jd is None or not profile.is_file() or not jd.is_file():
         return None
     text = jd.read_text(encoding="utf-8", errors="replace")
     try:

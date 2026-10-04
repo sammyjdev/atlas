@@ -1,6 +1,5 @@
 """Dossie views for tracked applications."""
 import contextlib
-from pathlib import Path
 from urllib.parse import parse_qsl
 
 from fastapi import APIRouter, Request
@@ -24,9 +23,9 @@ def _all_rows(db_path: str):
 
 
 def _context(db_path: str, app_id: int, row) -> dict:
-    dossier_dir = row["dossier_dir"]
-    has_dossier = bool(dossier_dir) and Path(dossier_dir).is_dir()
-    jd_path = Path(dossier_dir) / "jd.md" if has_dossier else None
+    dossier = track.dossier_of(db_path, row["dossier_dir"])
+    has_dossier = dossier is not None and dossier.is_dir()
+    jd_path = dossier / "jd.md" if has_dossier else None
     jd_text = jd_path.read_text(encoding="utf-8", errors="replace") if jd_path and jd_path.is_file() else None
     entries = track.entries(db_path, app_id) if has_dossier else []
     return {
