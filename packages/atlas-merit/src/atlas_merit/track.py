@@ -272,8 +272,7 @@ def show_markdown(db_path: str, app_id: int) -> str:
     if row is None:
         raise TrackError(f"no application with id {app_id}")
 
-    dossier_dir = row["dossier_dir"]
-    dossier = dossier_of(db_path, dossier_dir)
+    dossier = dossier_of(db_path, row["dossier_dir"])
     has_dossier = dossier is not None and dossier.is_dir()
 
     files = "-"
@@ -299,7 +298,7 @@ def show_markdown(db_path: str, app_id: int) -> str:
         f"updated_at: {_plain(row['updated_at'])}",
         f"note: {_plain(row['note'])}",
         "",
-        f"dossier: {_plain(dossier_dir)}",
+        f"dossier: {_plain(str(dossier) if dossier else None)}",
         f"files: {files}",
         "",
         f"last {SHOW_ENTRIES} log entries:",

@@ -298,7 +298,9 @@ def test_copied_ledger_uses_the_dossier_beside_it_when_the_stored_one_is_gone(tm
 
     assert not home.exists()
     assert [body for _, _, body in track.entries(copy_db, app_id)] == ["first", "second"]
-    assert "first" in track.show_markdown(copy_db, app_id)
+    shown = track.show_markdown(copy_db, app_id)
+    assert "first" in shown
+    assert f"dossier: {copy / 'applications'}" in shown
 
 
 def test_log_without_a_stored_dossier_creates_it_under_the_given_root(tmp_path):
