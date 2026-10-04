@@ -27,7 +27,9 @@ NOISE_SENDERS = (
     "noreply+automations@airtableemail.com",
     *mail.JOB_ALERT_SENDERS,
 )
-NOISE_SUBJECT = re.compile(r"^canceled( event)?:|\blove your feedback\b", re.IGNORECASE)
+NOISE_SUBJECT = re.compile(
+    r"^canceled( event)?:|\bwe['\u2019]d love your feedback\b", re.IGNORECASE
+)
 QUERY = " ".join(
     [
         "newer_than:30d in:inbox -in:sent -category:promotions -category:social",

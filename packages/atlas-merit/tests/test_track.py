@@ -301,6 +301,17 @@ def test_copied_ledger_uses_the_dossier_beside_it_when_the_stored_one_is_gone(tm
     assert "first" in track.show_markdown(copy_db, app_id)
 
 
+def test_log_without_a_stored_dossier_creates_it_under_the_given_root(tmp_path):
+    db = str(tmp_path / "merit.db")
+    app_id = track.add(db, "s1", title="A")
+    other = tmp_path / "elsewhere"
+
+    path = track.log(db, app_id, "hello", file="notes", dossier_root=other)
+
+    assert path.parent.parent == other
+    assert not (tmp_path / "applications").exists()
+
+
 def test_log_touches_updated_at(tmp_path):
     db = str(tmp_path / "t.db")
     app_id = track.add(db, "s1", title="A", dossier_root=tmp_path / "d")

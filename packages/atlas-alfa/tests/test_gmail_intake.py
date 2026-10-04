@@ -47,11 +47,13 @@ def test_from_mcp_drops_owner_noise_from_the_first_real_pull():
         _msg("b4", "Canceled event: Interview with Acme @ Mon"),
         _msg("b5", "Acme - We\u2019d love your feedback"),
         _msg("b6", "Interview feedback for your application"),
+        _msg("b7", "Interview feedback: we love your feedback round, next step"),
+        _msg("b8", "Acme - We'd love your feedback"),
     ]
 
     found, _ = gmail.from_mcp(items)
 
-    assert [item["id"] for item in found] == ["b6"]
+    assert sorted(item["id"] for item in found) == ["b6", "b7"]
     assert all(f"-from:{s}" in gmail.QUERY for s in ("team@mercor.com",
                                                      "noreply+automations@airtableemail.com"))
 

@@ -248,13 +248,13 @@ def log(
         row = conn.execute(_SELECT_ROW_SQL, {"id": app_id}).fetchone()
         if row is None:
             raise TrackError(f"no application with id {app_id}")
-        dossier = row["dossier_dir"]
-        if not dossier:
+        dossier = dossier_of(db_path, row["dossier_dir"])
+        if dossier is None:
             if dossier_root is None:
                 raise TrackError(f"application {app_id} has no dossier; re-add with --dir")
-            dossier = str(_dossier_path(dossier_root, app_id, row["title"], row["company"], row["source"]))
-            conn.execute(_SET_DOSSIER_SQL, {"dossier_dir": dossier, "id": app_id})
-        path = _ensure_dossier(dossier_of(db_path, dossier), row["source"]) / f"{file}.md"
+            dossier = _dossier_path(dossier_root, app_id, row["title"], row["company"], row["source"])
+            conn.execute(_SET_DOSSIER_SQL, {"dossier_dir": str(dossier), "id": app_id})
+        path = _ensure_dossier(dossier, row["source"]) / f"{file}.md"
         with path.open("a", encoding="utf-8") as fh:
             fh.write(f"\n## {stamp}\n\n{_escape_boundaries(body)}\n")
         path.chmod(FILE_MODE)
