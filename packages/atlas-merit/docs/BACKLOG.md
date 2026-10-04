@@ -1,8 +1,14 @@
 # MERIT backlog and next steps
 
-Execution order for fresh sessions:
-`docs/superpowers/plans/2026-08-03-merit-execution-plan.md`. This file stays
-the inventory of what is open; that one decides what to do first.
+The queue that decides what to do first is the Linear project ATLAS. This
+file stays the inventory of what is open inside MERIT.
+
+Status snapshot (2026-10-03): MERIT lives in the public `atlas` monorepo and
+is the ledger under Tess (`atlas-alfa`), which reads and writes it in
+process. `track` gained the terminal statuses `accepted` and `archived` and
+dossier log files beside `merit.db`. `merit rank` publishes an aggregate
+`DemandSignal` into the vault exchange when `ATLAS_VAULT` is set. `merit
+serve` stays a loopback debug UI. The 2026-08-03 snapshot below is history.
 
 Status snapshot (2026-08-03): merit serve (FastAPI+htmx, localhost-only,
 CSP-clean) now carries four views - Vagas, Pipeline, Dossie, Evals - with
@@ -75,13 +81,12 @@ smoke-tested end to end.
 
 ## Roadmap
 
-- [ ] **v0.25 - evals:** postings corpus as a LangSmith dataset (owner-side
-      signup); LLM-as-judge scoring of report quality (GNOMON bridge).
-      Promotes LangSmith from partial to strong in the profile.
-- [ ] **v0.3 - service:** FastAPI layer mounting the same graph, Docker
-      deploy on the existing Coolify VPS.
-- [ ] **v1.0 - benchmark:** MERIT's graph vs a custom-loop implementation,
-      GNOMON panel, published through METRON + evidence-repo.
+- [x] **v0.25 - evals:** LangSmith dataset and experiment done 2026-08-02.
+      The GNOMON judge panel is still open (see Next in the loop).
+- [x] ~~**v0.3 - service:** FastAPI layer mounting the same graph, Docker
+      deploy on the existing Coolify VPS.~~ Superseded: one host, one SQLite,
+      Tess binds loopback; no container deploy.
+- [x] **v1.0 - benchmark:** sealed 2026-08-03 (claim C-MERIT-001).
 
 ## Standing constraints
 

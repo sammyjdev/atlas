@@ -44,8 +44,9 @@ cites MERIT history and is outside this decision.
    (including `inputs/syllabus.yaml`), and the local tool directories
    `.axon/`, `.forge/`, and `.claude/`. The path audit on 2026-09-23
    read `inputs/syllabus.yaml` as topic lists only (`llms`, `rag`,
-   `java`) with no employer names. The public package does not read
-   `inputs/`, so the file stays on the vault anyway. The reason is the
+   `java`) with no employer names. The public package does not ship
+   `inputs/`. Runtime reads still use `$ATLAS_VAULT/inputs/`. The file
+   stays on the vault. The reason is the
    one in the context: no published claim needs the private SHAs, and
    the history is personal data.
 3. The private `sage` repository remains the vault and the runtime
@@ -55,8 +56,12 @@ cites MERIT history and is outside this decision.
    working directory that is neither the private checkout nor the
    public `atlas` checkout; `git status` on the public tree shows no
    change from that run; writes inside the private checkout are limited
-   to `vault/`, `exports/`, `state.json`, and `STATUS.md`. After that
-   observation, the private tree is no longer the source of the library.
+   to `vault/`, `exports/`, `state.json`, and `STATUS.md`. A
+   `workflow_dispatch` whose working directory is the private checkout
+   does not satisfy this observation: that directory is `ATLAS_VAULT`,
+   so a cwd fallback and a vault write look the same. After the
+   observation above, and not before, the private tree is no longer
+   the source of the library.
 4. `ATLAS_VAULT` is that private checkout root. The process expands `~`
    when it reads the variable; the shell is not required to. It does
    not replace `ATLAS_HOME` for other modules. For SAGE, `state.json`,
@@ -72,9 +77,11 @@ cites MERIT history and is outside this decision.
    package and `--help` do not require `ATLAS_VAULT`. Any resolution of
    vault, state, inputs, exports, or STATUS that needs `ATLAS_VAULT`
    and finds it unset exits with an error. It does not fall back to the
-   process working directory or to `Path(__file__)`. `--dry-run` still
-   sends the vault to a temporary directory and writes nothing under
-   `ATLAS_VAULT`.
+   process working directory or to `Path(__file__)`. `--dry-run` sends
+   the vault to a temporary directory. That path is not an environment
+   variable. The run writes
+   nothing under `ATLAS_VAULT`: not the vault, not `state.json`, not
+   `exports/`, and not `STATUS.md`.
 
 `inputs/jds/` stays the manual topic override until `DemandSignal`
 exists. This ADR does not change that ADR 0001 rule.
@@ -93,12 +100,14 @@ exists. This ADR does not change that ADR 0001 rule.
   from `__file__` or the process working directory is a bug, not a
   default. A private script that still lives in the checkout is outside
   that rule.
-- The copy into `packages/atlas-sage` does not land until a search of
-  that tree shows none of the paths in decision 2. Accepting this ADR
-  is the method. It is not that landing.
-- The exclusion list is paths. It does not prove that a source file is
-  free of a personal string. The search above is the content check, and
-  this ADR does not claim that check has run.
+- The copy into `packages/atlas-sage` does not land until two searches
+  of that tree are clean. The path search finds none of the paths in
+  decision 2. The content search finds none of `InMail`, `profile.md`,
+  `.env`, or an absolute `/Users/`, and none of the employer hostnames
+  the copy task lists before it runs. This ADR does not publish that
+  hostname list. A path search is not a content search. Accepting this
+  ADR is the method. It is not that landing, and this ADR does not claim
+  either search has run.
 - Rejected: importing SAGE with `git filter-repo`. A rewritten history
   is still a publication of a personal timeline, and nothing public
   needs those SHAs. Also rejected: resolving the vault from the current

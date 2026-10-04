@@ -1,17 +1,17 @@
 # ATLAS
 
-Public monorepo for three career tools that share one core:
+Public monorepo for the career suite:
 
-- MERIT (`atlas-merit`): job postings, evidence matching and application tracking.
-- ORBIT: AI research radar ranked against the user's profile.
-- SAGE: interview study material from markdown.
+- `atlas-kit` (import `atlas_core`): shared contracts, config and the exchange. Imports no module.
+- MERIT (`atlas-merit`): ledger, match, and the loopback debug UI `merit serve`.
+- SAGE (`atlas-sage`): interview prep. The private vault stays in the sage checkout.
+- ALFA (`atlas-alfa`): Tess, the interface you open. It imports Merit and does not import Sage.
+- ORBIT: not in this tree.
 
-Status: bootstrap. Only `atlas-kit` and `atlas-merit` are in the repository today,
-with ORBIT and SAGE landing in later phases.
-
-Modules depend only on the core package `atlas-kit` (import name
-`atlas_core`) and never on each other. They exchange data through an
-append-only local exchange. Decisions are recorded in `docs/adr/`.
+Merit and Sage do not import each other. `merit rank` publishes a `DemandSignal`
+into the vault exchange and Sage reads it to pick topics. Alfa is the shell, not
+a fourth brain.
+Decisions are recorded in `docs/adr/`.
 
 Personal data never enters this repository.
 
