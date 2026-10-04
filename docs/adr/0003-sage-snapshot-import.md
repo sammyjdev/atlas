@@ -102,8 +102,9 @@ exists. This ADR does not change that ADR 0001 rule.
   that rule.
 - The copy into `packages/atlas-sage` does not land until two searches
   of that tree are clean. The path search finds none of the paths in
-  decision 2. The content search finds none of `InMail`, `profile.md`,
-  `.env`, or an absolute `/Users/`, and none of the employer hostnames
+  decision 2. The content search finds no `InMail` text, no private
+  profile content, no secret value from a `.env` file, no absolute
+  `/Users/` path, and none of the employer hostnames
   the copy task lists before it runs. This ADR does not publish that
   hostname list. A path search is not a content search. Accepting this
   ADR is the method. It is not that landing, and this ADR does not claim
