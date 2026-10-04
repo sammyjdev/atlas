@@ -1,8 +1,8 @@
 """Stage-1 deterministic batch scoring: scan a directory of postings against a
-profile's alias table and skill names. No LLM, no network, no persistence -
+profile's alias table and skill names. Scoring is offline and has no LLM -
 reconnaissance only, so the owner can pick which postings deserve `merit match`.
-After a successful pass, if ATLAS_VAULT is set, a DemandSignal is published
-into the vault exchange.
+After a successful pass, if ATLAS_VAULT is set, an aggregate DemandSignal is
+written and pushed into the vault exchange (git); a failed publish only warns.
 """
 import os
 import re
