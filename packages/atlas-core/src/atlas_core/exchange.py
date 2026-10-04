@@ -9,9 +9,11 @@ same items.
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 import uuid
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
@@ -26,6 +28,13 @@ def new_id() -> str:
     now = max(time.time_ns(), _last_ns + 1)
     _last_ns = now
     return f"{now:020d}-{uuid.uuid4().hex}"
+
+
+@runtime_checkable
+class ExchangeStore(Protocol):
+    def publish(self, channel: str, item: BaseModel) -> str: ...
+
+    def read(self, channel: str, since: str | None = None) -> list[tuple[str, dict]]: ...
 
 
 class LocalExchangeStore:
@@ -51,6 +60,31 @@ class LocalExchangeStore:
                 continue
             items.append((item_id, json.loads(path.read_text())))
         return items
+
+
+class VaultGitStore:
+    def __init__(self, vault: Path) -> None:
+        self.vault = vault
+        self._files = LocalExchangeStore(vault / "exchange")
+
+    def publish(self, channel: str, item: BaseModel) -> str:
+        item_id = self._files.publish(channel, item)
+        rel = Path("exchange") / channel / f"{item_id}.json"
+        self._git("add", "--", rel.as_posix())
+        self._git("commit", "-m", f"exchange {channel} {item_id}", "--", rel.as_posix())
+        self._git("push", "-u", "origin", "HEAD")
+        return item_id
+
+    def read(self, channel: str, since: str | None = None) -> list[tuple[str, dict]]:
+        return self._files.read(channel, since=since)
+
+    def _git(self, *args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(self.vault), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
 
 
 class Cursor:
