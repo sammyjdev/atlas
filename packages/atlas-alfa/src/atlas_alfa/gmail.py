@@ -23,7 +23,12 @@ SUBJECT_TERMS = (
 NOISE_SENDERS = (
     "notifications@github.com",
     "newsletters-noreply@linkedin.com",
+    "team@mercor.com",
+    "noreply+automations@airtableemail.com",
     *mail.JOB_ALERT_SENDERS,
+)
+NOISE_SUBJECT = re.compile(
+    r"^canceled( event)?:|\bwe['\u2019]d love your feedback\b", re.IGNORECASE
 )
 QUERY = " ".join(
     [
@@ -97,7 +102,8 @@ def from_mcp(items: Iterable) -> tuple[list[dict], int]:
             skipped += 1
             continue
         tipo = kind(item["assunto"])
-        if item.pop("sent") or item["remetente"] in NOISE_SENDERS or tipo is None:
+        noise = item["remetente"] in NOISE_SENDERS or NOISE_SUBJECT.search(item["assunto"])
+        if item.pop("sent") or noise or tipo is None:
             continue
         item["tipo"] = tipo
         current = found.get(key(item))

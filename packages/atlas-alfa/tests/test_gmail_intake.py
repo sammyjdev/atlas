@@ -38,6 +38,26 @@ def test_from_mcp_drops_noise_senders_and_untyped_subjects():
     assert skipped == 0
 
 
+def test_from_mcp_drops_owner_noise_from_the_first_real_pull():
+    items = [
+        _msg("b1", "Instant Work Offer: Paid Research", sender="team@mercor.com"),
+        _msg("b2", "Ready to Shine? Your Video Interview Awaits!",
+             sender="noreply+automations@airtableemail.com"),
+        _msg("b3", "Canceled: Senior AI Engineer/Agentic Interview"),
+        _msg("b4", "Canceled event: Interview with Acme @ Mon"),
+        _msg("b5", "Acme - We\u2019d love your feedback"),
+        _msg("b6", "Interview feedback for your application"),
+        _msg("b7", "Interview feedback: we love your feedback round, next step"),
+        _msg("b8", "Acme - We'd love your feedback"),
+    ]
+
+    found, _ = gmail.from_mcp(items)
+
+    assert sorted(item["id"] for item in found) == ["b6", "b7"]
+    assert all(f"-from:{s}" in gmail.QUERY for s in ("team@mercor.com",
+                                                     "noreply+automations@airtableemail.com"))
+
+
 def test_from_mcp_keeps_typed_mail_with_importance():
     found, _ = gmail.from_mcp(
         [

@@ -129,6 +129,18 @@ def _dossier_path(
     return Path(root) / f"{app_id}-{_slug(title, company, source)}"
 
 
+def dossier_of(db_path: str, stored: str | None) -> Path | None:
+    """The stored dossier, or the same folder beside the db when the stored path is gone.
+
+    dossier_dir is absolute, so a ledger copied to another host or folder
+    would otherwise keep pointing at (and recreate) the old location.
+    """
+    if not stored:
+        return None
+    path = Path(stored)
+    return path if path.is_dir() else Path(db_path).parent / "applications" / path.name
+
+
 def _ensure_dossier(path: Path, source: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.parent.chmod(DIR_MODE)
@@ -236,13 +248,13 @@ def log(
         row = conn.execute(_SELECT_ROW_SQL, {"id": app_id}).fetchone()
         if row is None:
             raise TrackError(f"no application with id {app_id}")
-        dossier = row["dossier_dir"]
-        if not dossier:
+        dossier = dossier_of(db_path, row["dossier_dir"])
+        if dossier is None:
             if dossier_root is None:
                 raise TrackError(f"application {app_id} has no dossier; re-add with --dir")
-            dossier = str(_dossier_path(dossier_root, app_id, row["title"], row["company"], row["source"]))
-            conn.execute(_SET_DOSSIER_SQL, {"dossier_dir": dossier, "id": app_id})
-        path = _ensure_dossier(Path(dossier), row["source"]) / f"{file}.md"
+            dossier = _dossier_path(dossier_root, app_id, row["title"], row["company"], row["source"])
+            conn.execute(_SET_DOSSIER_SQL, {"dossier_dir": str(dossier), "id": app_id})
+        path = _ensure_dossier(dossier, row["source"]) / f"{file}.md"
         with path.open("a", encoding="utf-8") as fh:
             fh.write(f"\n## {stamp}\n\n{_escape_boundaries(body)}\n")
         path.chmod(FILE_MODE)
@@ -260,8 +272,7 @@ def show_markdown(db_path: str, app_id: int) -> str:
     if row is None:
         raise TrackError(f"no application with id {app_id}")
 
-    dossier_dir = row["dossier_dir"]
-    dossier = Path(dossier_dir) if dossier_dir else None
+    dossier = dossier_of(db_path, row["dossier_dir"])
     has_dossier = dossier is not None and dossier.is_dir()
 
     files = "-"
@@ -287,7 +298,7 @@ def show_markdown(db_path: str, app_id: int) -> str:
         f"updated_at: {_plain(row['updated_at'])}",
         f"note: {_plain(row['note'])}",
         "",
-        f"dossier: {_plain(dossier_dir)}",
+        f"dossier: {_plain(str(dossier) if dossier else None)}",
         f"files: {files}",
         "",
         f"last {SHOW_ENTRIES} log entries:",
@@ -394,11 +405,8 @@ def entries(db_path: str, app_id: int) -> list[tuple[str, str, str]]:
     if row is None:
         raise TrackError(f"no application with id {app_id}")
 
-    dossier_dir = row["dossier_dir"]
-    if not dossier_dir:
-        return []
-    dossier = Path(dossier_dir)
-    if not dossier.is_dir():
+    dossier = dossier_of(db_path, row["dossier_dir"])
+    if dossier is None or not dossier.is_dir():
         return []
 
     combined: list[tuple[str, str, str]] = []

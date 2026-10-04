@@ -281,6 +281,39 @@ def test_add_stores_thread_id_and_threads_maps(tmp_path):
     assert track.threads(db) == {"2-X==": a}
 
 
+def test_copied_ledger_uses_the_dossier_beside_it_when_the_stored_one_is_gone(tmp_path):
+    import shutil
+
+    home = tmp_path / "mac"
+    home.mkdir()
+    db = str(home / "merit.db")
+    app_id = track.add(db, "s1", title="A", dossier_root=home / "applications")
+    track.log(db, app_id, "first", file="thread")
+    copy = tmp_path / "linux"
+    shutil.copytree(home, copy)
+    shutil.rmtree(home)
+    copy_db = str(copy / "merit.db")
+
+    track.log(copy_db, app_id, "second", file="notes")
+
+    assert not home.exists()
+    assert [body for _, _, body in track.entries(copy_db, app_id)] == ["first", "second"]
+    shown = track.show_markdown(copy_db, app_id)
+    assert "first" in shown
+    assert f"dossier: {copy / 'applications'}" in shown
+
+
+def test_log_without_a_stored_dossier_creates_it_under_the_given_root(tmp_path):
+    db = str(tmp_path / "merit.db")
+    app_id = track.add(db, "s1", title="A")
+    other = tmp_path / "elsewhere"
+
+    path = track.log(db, app_id, "hello", file="notes", dossier_root=other)
+
+    assert path.parent.parent == other
+    assert not (tmp_path / "applications").exists()
+
+
 def test_log_touches_updated_at(tmp_path):
     db = str(tmp_path / "t.db")
     app_id = track.add(db, "s1", title="A", dossier_root=tmp_path / "d")
